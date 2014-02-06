@@ -10,7 +10,7 @@
         <module>protocolprocessing</module>
         <module>gui</module>
     </modules>
-
+    <!-- test -->
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
