@@ -139,7 +139,7 @@ public class StartBgpBg {
 		public static HashMap<String, BgpConfig[]> validConfigChanges(List<BgpConfig> bgpConfigs) {
 			//If the router is new add the router.
 			HashMap<String, BgpConfig[]> testMaps = new HashMap<String, BgpConfig[]>();
-			List<BgpConfig> responseConfigs = new ArrayList<>();
+			List<BgpConfig> responseConfigs = new ArrayList<BgpConfig>();
 
 			
 			for(BgpConfig newConfig : bgpConfigs){
