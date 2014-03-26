@@ -2,8 +2,8 @@ package com.bgppp.protoprocessor;
 
 import java.net.InetAddress;
 
-public class Link {
 
+public class Link {
 	private InetAddress sourceAddress;//self, but we need to determine which of the available interfaces is doing that.
 	private InetAddress destinationAddress;//address of the peer bgp router.
 	private String destinationRouterName;//name of the bgp peer.
@@ -32,5 +32,15 @@ public class Link {
 	}
 	public void setNativePort(Integer nativePort) {
 		this.nativePort = nativePort;
+	}
+	
+	@Override
+	public String toString() {
+		String response="";
+		response += "sourceAddress:"+sourceAddress;
+		response += ",destinationAddress:"+destinationAddress;
+		response += ",destinationRouterName:"+destinationRouterName;
+		response += ",nativePort:"+nativePort;
+		return response;
 	}
 }

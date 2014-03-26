@@ -56,15 +56,13 @@ public class BgpConfig {
 
 	public boolean addLink(InetAddress localAddress, InetAddress remoteAddress) {
 		if (!address.contains(localAddress)) {
-			System.out.println("Link not created, Local Address "
-					+ localAddress.toString() + " Does not exist.");
+			System.out.println("Link not created, Local Address " + localAddress.toString() + " Does not exist.");
 			return false;
 		} else {
 			for (Link link : this.links) {
 				if (link.getSourceAddress().equals(localAddress)) {
 					if (link.getDestinationAddress().equals(remoteAddress)) {
-						System.out
-								.println("Link not created, Local Address and Remote address pair "
+						System.out.println("Link not created, Local Address and Remote address pair "
 										+ localAddress.toString()
 										+ "-"
 										+ remoteAddress.toString()
@@ -80,5 +78,14 @@ public class BgpConfig {
 		link.setDestinationAddress(remoteAddress);
 		this.links.add(link);
 		return true;
+	}
+	
+	@Override
+	public String toString(){
+		String response = "";
+		response += "routerName:"+this.routerName;
+		response += ",address:"+this.address;
+		response += ",link:"+this.links;
+		return response;
 	}
 }
