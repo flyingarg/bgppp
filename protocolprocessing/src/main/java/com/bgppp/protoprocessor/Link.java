@@ -2,18 +2,24 @@ package com.bgppp.protoprocessor;
 
 import java.net.InetAddress;
 
+import com.bgppp.protoprocessor.graphs.GraphNode;
+import com.bgppp.protoprocessor.graphs.GraphPath;
 
-public class Link {
-	private InetAddress sourceAddress;//self, but we need to determine which of the available interfaces is doing that.
+
+public class Link extends GraphPath{
+	public Link(GraphNode node, Long weight) {
+		super(node, weight);
+	}
+	private String sourceAddressName;//self, but we need to determine which of the available interfaces is doing that.
 	private InetAddress destinationAddress;//address of the peer bgp router.
 	private String destinationRouterName;//name of the bgp peer.
 	private Integer nativePort;//port being used to connect to the destination. destination port is always 179
-	
-	public InetAddress getSourceAddress() {
-		return sourceAddress;
+	private boolean isAlive;
+	public String getSourceAddressName() {
+		return sourceAddressName;
 	}
-	public void setSourceAddress(InetAddress sourceAddress) {
-		this.sourceAddress = sourceAddress;
+	public void setSourceAddressName(String sourceAddressName) {
+		this.sourceAddressName = sourceAddressName;
 	}
 	public InetAddress getDestinationAddress() {
 		return destinationAddress;
@@ -33,11 +39,16 @@ public class Link {
 	public void setNativePort(Integer nativePort) {
 		this.nativePort = nativePort;
 	}
-	
+	public boolean isAlive() {
+		return isAlive;
+	}
+	public void setAlive(boolean isAlive) {
+		this.isAlive = isAlive;
+	}
 	@Override
 	public String toString() {
 		String response="";
-		response += "sourceAddress:"+sourceAddress;
+		response += "sourceAddress:"+sourceAddressName;
 		response += ",destinationAddress:"+destinationAddress;
 		response += ",destinationRouterName:"+destinationRouterName;
 		response += ",nativePort:"+nativePort;

@@ -16,22 +16,22 @@ public class ConfigHelper {
 	public static HashMap<String, BgpConfig> stringToBgpConfig(ArrayList<String> configsList) {
 		HashMap<String, BgpConfig> responseBgpConfigs = new HashMap<String, BgpConfig>();
 		for (String configAsString : configsList) {
-			BgpConfig config = new BgpConfig();
+			BgpConfig config = new BgpConfig("");
 			log.info("Configuration - " + configAsString);
 			String[] parameters = configAsString.split("\\^\\&");
 			for (int i = 0; i < parameters.length; i++) {
 				if (parameters[i].trim().startsWith("[")) {//Name
 					String routerName = parameters[i].substring(parameters[i].indexOf("[") + 1,parameters[i].indexOf("]"));
 					config.setRouterName(routerName);
-				} else if (parameters[i].trim().matches("[0-9]*.[0-9]*.[0-9]*.[0-9]*[-][0-9]*.[0-9]*.[0-9]*.[0-9]*")) {//Links
+				} else if (parameters[i].trim().matches("[0-9a-zA-Z]*[-][0-9]*.[0-9]*.[0-9]*.[0-9]*")) {//Links
 					try {
-						config.addLink(InetAddress.getByName(parameters[i].split("-")[0].trim()), InetAddress.getByName(parameters[i].split("-")[1].trim()));
+						config.addLink(parameters[i].split("-")[0].trim(), InetAddress.getByName(parameters[i].split("-")[1].trim()));
 					} catch (Exception exception) {
 						log.severe(exception.getMessage());
 					}
-				} else if (parameters[i].trim().matches("[0-9]*.[0-9]*.[0-9]*.[0-9]*")) {//Ip Address
+				} else if (parameters[i].trim().matches("[0-9a-zA-Z]*[/][0-9]*.[0-9]*.[0-9]*.[0-9]*[/][0-9]*.[0-9]*.[0-9]*.[0-9]*")) {//Ip Address
 					try {
-						config.addAddress(InetAddress.getByName(parameters[i].trim()));
+						config.addAddress(new AddressAndMask(parameters[i].trim().split("\\/")[0], parameters[i].trim().split("\\/")[1],parameters[i].trim().split("\\/")[2]));
 					} catch (Exception exception) {
 						log.severe(exception.getMessage());
 					}
@@ -42,7 +42,6 @@ public class ConfigHelper {
 		return responseBgpConfigs;
 	}
 	
-	// TODO Will validate what configurations are new and then start stop threads accordingly.
 	public static HashMap<String, BgpConfig[]> validConfigChanges(HashMap<String, BgpConfig> newBgpConfigs, WrappedHash<String, BgpConfig> currentBgpConfigs) {
 		WrappedHash<String, BgpConfig[]> routersWithNewConfigs = new WrappedHash<String, BgpConfig[]>();
 		//Create Router config arrays [0] contains current config, [1] is new config
@@ -92,19 +91,21 @@ public class ConfigHelper {
 		}
 		return routersWithNewConfigs;
 	}
-	
+
 	public static boolean isConfigNew(BgpConfig[] configPairs){
 		for(int i=0; i< 2; i++){//switch between 1 and zero.
-			for(InetAddress address : configPairs[i].getAddress()){
-				if(!configPairs[(i+1)%2].getAddress().contains(address)){
+			for(String addressAndMask : configPairs[i].getAddressAndMasks().keySet()){
+				//if(!configPairs[(i+1)%2].getAddressAndMasks().contains(addressAndMask)){
+				if(!configPairs[i].getAddressAndMasks().get(addressAndMask).existsIn(configPairs[(i+1)%2].getAddressAndMasks())){
 					return true;
 				}
 			}
 			//Check links
+			//TODO : The boolean here is redundant.
 			for(Link link1 : configPairs[i].getLinks()){
 				boolean link1Exists = false;
 				for(Link link2 : configPairs[(i+1)%2].getLinks()){
-					if(link1.getDestinationAddress().equals(link2.getDestinationAddress()) && link1.getSourceAddress().equals(link2.getSourceAddress())){
+					if(link1.getDestinationAddress().equals(link2.getDestinationAddress()) && link1.getSourceAddressName().equals(link2.getSourceAddressName())){
 						link1Exists = true;
 					}
 				}

@@ -2,15 +2,24 @@ package com.bgppp.protoprocessor;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
-public class BgpConfig {
+import com.bgppp.protoprocessor.graphs.GraphNode;
+import com.bgppp.protoprocessor.utils.AddressAndMask;
+
+public class BgpConfig extends GraphNode{
+
+	public BgpConfig(String name) {
+		super(name);
+		this.routerName = name;
+	}
 
 	// Basic router identifiers.
 	private String routerName;
 
 	// Array of InetAddresses available.
-	private List<InetAddress> address = new ArrayList<InetAddress>();
+	private HashMap<String, AddressAndMask> addressAndMasks = new HashMap<String, AddressAndMask>();
 
 	// Connection details - List of one-to-one outgoing connections.
 	private List<Link> links = new ArrayList<Link>();
@@ -20,29 +29,30 @@ public class BgpConfig {
 	}
 
 	public void setRouterName(String routerName) {
+		super.setNodeName(routerName);
 		this.routerName = routerName;
 	}
 
-	public List<InetAddress> getAddress() {
-		return address;
+	public HashMap<String, AddressAndMask> getAddressAndMasks() {
+		return addressAndMasks;
 	}
 
-	public void setAddress(List<InetAddress> address) {
-		this.address = address;
+	public void setAddressAndMasks(HashMap<String, AddressAndMask> addressAndMask) {
+		this.addressAndMasks = addressAndMask;
 	}
 
-	public boolean addAddress(InetAddress inetAddress) {
-		if (this.address != null && this.address.size() != 0) {
-			for (InetAddress address : this.address) {
-				if (address.equals(inetAddress)) {
+	public boolean addAddress(AddressAndMask newAddressAndMask) {
+/*		if (this.addressAndMasks != null && this.addressAndMasks.size() != 0) {
+			for (AddressAndMask address : this.addressAndMasks) {
+				if (address.equals(newAddressAndMask)) {
 					System.out.println("Address not added, Address "
-							+ inetAddress.toString() + " already exist.");
+							+ newAddressAndMask.toString() + " already exist.");
 					return false;
 				}
 			}
 
-		}
-		address.add(inetAddress);
+		}*/
+		addressAndMasks.put(newAddressAndMask.getName(), newAddressAndMask);
 		return true;
 	}
 
@@ -54,16 +64,16 @@ public class BgpConfig {
 		this.links = links;
 	}
 
-	public boolean addLink(InetAddress localAddress, InetAddress remoteAddress) {
-		if (!address.contains(localAddress)) {
-			System.out.println("Link not created, Local Address " + localAddress.toString() + " Does not exist.");
+	public boolean addLink(String localAddressName, InetAddress remoteAddress) {
+		if (addressAndMasks.get(localAddressName) == null) {
+			System.out.println("Link not created, Local Address " + localAddressName + " Does not exist.");
 			return false;
 		} else {
 			for (Link link : this.links) {
-				if (link.getSourceAddress().equals(localAddress)) {
+				if (link.getSourceAddressName().equals(localAddressName)) {
 					if (link.getDestinationAddress().equals(remoteAddress)) {
 						System.out.println("Link not created, Local Address and Remote address pair "
-										+ localAddress.toString()
+										+ localAddressName
 										+ "-"
 										+ remoteAddress.toString()
 										+ " already exists.");
@@ -73,18 +83,22 @@ public class BgpConfig {
 			}
 
 		}
-		Link link = new Link();
-		link.setSourceAddress(localAddress);
+		Link link = new Link(this,new Long("0"));
+		link.setSourceAddressName(localAddressName);
 		link.setDestinationAddress(remoteAddress);
 		this.links.add(link);
 		return true;
+	}
+	
+	public AddressAndMask getAddressAndMaskByName(String name){
+		return addressAndMasks.get(name);
 	}
 	
 	@Override
 	public String toString(){
 		String response = "";
 		response += "routerName:"+this.routerName;
-		response += ",address:"+this.address;
+		response += ",address:"+this.addressAndMasks;
 		response += ",link:"+this.links;
 		return response;
 	}
