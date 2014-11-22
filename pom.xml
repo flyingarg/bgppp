@@ -8,7 +8,7 @@
     <name>bgppp</name>
     <modules>
         <module>protocolprocessing</module>
-		<!-- <module>gui</module> -->
+		<module>gui</module>
     </modules>
     <!-- shit -->
     <!-- commit from mohit052-->
