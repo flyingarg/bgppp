@@ -8,7 +8,7 @@ public class BgpHeader {
 	 * @param packet - The rest of the packet.
 	 * @return
 	 */
-	public Byte[] addHeader(int typeVal, Byte[] packet){
+	public synchronized Byte[] addHeader(int typeVal, Byte[] packet){
 		Byte[] marker = new Byte[16];
 		for(int i=0;i<marker.length;i++){
 			int temp = 255;
@@ -22,10 +22,22 @@ public class BgpHeader {
 		return conc(conc(conc(marker,length),type),packet);
 	}
 	
-	synchronized Byte[] conc(Byte[] a, Byte[] b) {
+	public synchronized Byte[] conc(Byte[] a, Byte[] b) {
 	    Byte[] result = new Byte[a.length + b.length]; 
 	    System.arraycopy(a, 0, result, 0, a.length); 
 	    System.arraycopy(b, 0, result, a.length, b.length); 
 	    return result;
 	} 
+	
+	public synchronized byte[] getbyteFromByte(Byte[] inputBytes){
+		byte[] outputBytes = new byte[inputBytes.length];
+		for(int i=0; i<inputBytes.length; i++){
+			outputBytes[i] = inputBytes[i];
+		}
+		return outputBytes;
+	}
+	
+	public boolean isHeaderPresent(){
+		return true;
+	}
 }

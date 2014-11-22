@@ -2,7 +2,7 @@ package com.bgppp.protoprocessor.utils;
 
 import java.net.InetAddress;
 import java.util.HashMap;
-import java.util.logging.Logger;
+import org.apache.log4j.*;
 
 public class AddressAndMask {
 	public static Logger log = Logger.getLogger(AddressAndMask.class.getName());
@@ -23,7 +23,7 @@ public class AddressAndMask {
 		try {
 			this.address = InetAddress.getByName(address);
 		} catch (Exception exception) {
-			log.severe("Problem adding address in constructor.");
+			log.error("Problem adding address in constructor.");
 		}
 		this.mask = mask;
 	}
@@ -76,7 +76,7 @@ public class AddressAndMask {
 		try {
 			this.address = InetAddress.getByName(address);
 		} catch (Exception exception) {
-			log.severe("Problem assigning address from AddressAndMask");
+			log.error("Problem assigning address from AddressAndMask");
 		}
 	}
 

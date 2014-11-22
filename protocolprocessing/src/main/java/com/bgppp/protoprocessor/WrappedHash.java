@@ -3,7 +3,7 @@ package com.bgppp.protoprocessor;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.HashMap;
-import java.util.logging.Logger;
+import org.apache.log4j.*;
 
 import com.bgppp.protoprocessor.utils.AddressAndMask;
 
@@ -42,7 +42,7 @@ public class WrappedHash<K, V> extends HashMap<K, V>{
 					Process process = processBuilder.start();
 					//exitStatus = ""+process.exitValue();
 				}catch(IOException exception){
-					log.severe("Error creating interface " + addresses.get(addressName).getAddress() + "/" + addresses.get(addressName).getMask() + ", Exit status: " + exitStatus);
+					log.error("Error creating interface " + addresses.get(addressName).getAddress() + "/" + addresses.get(addressName).getMask() + ", Exit status: " + exitStatus);
 				}
 			}
 			//Start discovery process
@@ -70,7 +70,7 @@ public class WrappedHash<K, V> extends HashMap<K, V>{
 					Process process = processBuilder.start();
 					exitStatus = ""+process.exitValue();
 				}catch(IOException exception){
-					log.severe("Error creating interface " + addresses.get(addressName).getAddress() + "/" + addresses.get(addressName).getMask() + ", Exit status: " + exitStatus);
+					log.error("Error creating interface " + addresses.get(addressName).getAddress() + "/" + addresses.get(addressName).getMask() + ", Exit status: " + exitStatus);
 				}
 			}
 			//Start discovery process

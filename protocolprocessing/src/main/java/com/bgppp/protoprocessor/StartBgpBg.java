@@ -10,8 +10,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Logger;
+import org.apache.log4j.*;
 
+import com.bgppp.protoprocessor.monitor.MonitorProducerConsumer;
 import com.bgppp.protoprocessor.utils.ConfigHelper;
 
 public class StartBgpBg {
@@ -22,6 +23,7 @@ public class StartBgpBg {
 	public static void main(String args[]) {
 		try {
 			Thread thread = new MainThread();
+			BasicConfigurator.configure();
 			// thread.setDaemon(true); Behaves really weird with daemon on. 
 			thread.start();
 		} catch (Exception exception) {
@@ -80,7 +82,8 @@ public class StartBgpBg {
 					e.printStackTrace();
 				}
 			}
-
+			MonitorProducerConsumer monitor = new MonitorProducerConsumer();
+			monitor.start();
 			while (true) {
 				// Checking file modification and saving configuration
 				if (lastChanged < file.lastModified() && file.canWrite()) {
@@ -118,6 +121,7 @@ public class StartBgpBg {
 					//Convert String configs to objects and then Validate these objects to find config changes
 					ConfigHelper.validConfigChanges(ConfigHelper.stringToBgpConfig(configs), routers);
 					configs.clear();
+					//TODO : Create a thread that monitors the producers and consumers and gets data out of them
 				}
 			}
 		}

@@ -3,7 +3,7 @@ package com.bgppp.protoprocessor.utils;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.logging.Logger;
+import org.apache.log4j.*;
 
 import com.bgppp.protoprocessor.BgpConfig;
 import com.bgppp.protoprocessor.Link;
@@ -27,13 +27,13 @@ public class ConfigHelper {
 					try {
 						config.addLink(parameters[i].split("-")[0].trim(), InetAddress.getByName(parameters[i].split("-")[1].trim()));
 					} catch (Exception exception) {
-						log.severe(exception.getMessage());
+						log.error(exception.getMessage());
 					}
 				} else if (parameters[i].trim().matches("[0-9a-zA-Z]*[/][0-9]*.[0-9]*.[0-9]*.[0-9]*[/][0-9]*.[0-9]*.[0-9]*.[0-9]*")) {//Ip Address
 					try {
 						config.addAddress(new AddressAndMask(parameters[i].trim().split("\\/")[0], parameters[i].trim().split("\\/")[1],parameters[i].trim().split("\\/")[2]));
 					} catch (Exception exception) {
-						log.severe(exception.getMessage());
+						log.error(exception.getMessage());
 					}
 				}
 			}
@@ -93,15 +93,12 @@ public class ConfigHelper {
 	}
 
 	public static boolean isConfigNew(BgpConfig[] configPairs){
-		for(int i=0; i< 2; i++){//switch between 1 and zero.
+		for(int i=0; i< 2; i++){
 			for(String addressAndMask : configPairs[i].getAddressAndMasks().keySet()){
-				//if(!configPairs[(i+1)%2].getAddressAndMasks().contains(addressAndMask)){
 				if(!configPairs[i].getAddressAndMasks().get(addressAndMask).existsIn(configPairs[(i+1)%2].getAddressAndMasks())){
 					return true;
 				}
 			}
-			//Check links
-			//TODO : The boolean here is redundant.
 			for(Link link1 : configPairs[i].getLinks()){
 				boolean link1Exists = false;
 				for(Link link2 : configPairs[(i+1)%2].getLinks()){

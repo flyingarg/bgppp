@@ -4,8 +4,11 @@ import java.util.HashMap;
 
 import com.bgppp.protoprocessor.graphs.*;
 
+import org.apache.log4j.*;
+
 public class NodeStore {
 
+	public static Logger log = Logger.getLogger(NodeStore.class.getName());
 	HashMap<String,GraphNode> hashStore = new HashMap<String, GraphNode>();
 	public HashMap<String, GraphNode> getHashStore() {
 		return hashStore;
@@ -44,13 +47,13 @@ public class NodeStore {
 		Long response = new Long("0");
 		String nodes[] = path.split("==>");
 		for(int i=0; i<nodes.length-1; i++){
-			System.out.println(i);
+			log.info(""+i);
 			try{
 				response+=this.getDistance(this.getNodeByName(nodes[i]), this.getNodeByName(nodes[i+1]));
 			}catch(NoPathException exception){
-				System.out.println(exception.getMessage());
+				log.info(exception.getMessage());
 			}catch(NoNodeException exception){
-				System.out.println(exception.getMessage());
+				log.info(exception.getMessage());
 			}
 		}
 		return response;

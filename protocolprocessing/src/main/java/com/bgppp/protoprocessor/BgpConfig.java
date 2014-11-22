@@ -4,12 +4,13 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
+import org.apache.log4j.*;
 import com.bgppp.protoprocessor.graphs.GraphNode;
 import com.bgppp.protoprocessor.utils.AddressAndMask;
 
 public class BgpConfig extends GraphNode{
 
+	public static Logger log = Logger.getLogger(BgpConfig.class.getName());
 	public BgpConfig(String name) {
 		super(name);
 		this.routerName = name;
@@ -45,7 +46,7 @@ public class BgpConfig extends GraphNode{
 /*		if (this.addressAndMasks != null && this.addressAndMasks.size() != 0) {
 			for (AddressAndMask address : this.addressAndMasks) {
 				if (address.equals(newAddressAndMask)) {
-					System.out.println("Address not added, Address "
+					log.info("Address not added, Address "
 							+ newAddressAndMask.toString() + " already exist.");
 					return false;
 				}
@@ -66,13 +67,13 @@ public class BgpConfig extends GraphNode{
 
 	public boolean addLink(String localAddressName, InetAddress remoteAddress) {
 		if (addressAndMasks.get(localAddressName) == null) {
-			System.out.println("Link not created, Local Address " + localAddressName + " Does not exist.");
+			log.info("Link not created, Local Address " + localAddressName + " Does not exist.");
 			return false;
 		} else {
 			for (Link link : this.links) {
 				if (link.getSourceAddressName().equals(localAddressName)) {
 					if (link.getDestinationAddress().equals(remoteAddress)) {
-						System.out.println("Link not created, Local Address and Remote address pair "
+						log.info("Link not created, Local Address and Remote address pair "
 										+ localAddressName
 										+ "-"
 										+ remoteAddress.toString()

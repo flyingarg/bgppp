@@ -10,19 +10,21 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.util.logging.Logger;
-
+import org.apache.log4j.*;
 import com.bgppp.protoprocessor.graphs.TimeOutUtils;
 
-public class BGPProducer extends Thread{
-	public static Logger log = Logger.getLogger(BGPProducer.class.getName());
+import com.bgppp.protoprocessor.utils.*;
+import com.bgppp.protoprocessor.packet.*;
+
+public class BgpProducer extends Thread{
+	public static Logger log = Logger.getLogger(BgpProducer.class.getName());
 	private BgpConfig bgpConfig = null;
 	private Link link = null;
 	private DataInputStream is = null;
 	private PrintStream os = null;
-	private int PORT = 179;
+	private int PORT = GetProperties.bgpPort;
 	private boolean isRunning = true;
-	
+	//private String producerName = "";
 	public boolean isRunning() {
 		return isRunning;
 	}
@@ -30,10 +32,10 @@ public class BGPProducer extends Thread{
 	public void setRunning(boolean isRunning) {
 		this.isRunning = isRunning;
 	}
-	public BGPProducer(BgpConfig bgpConfig, Link link){
+	public BgpProducer(BgpConfig bgpConfig, Link link){
 		this.bgpConfig = bgpConfig;
 		this.link = link;
-		this.setName(bgpConfig.getRouterName()+"_producer"+"_"+link.getDestinationRouterName());
+		this.setName(bgpConfig.getRouterName()+"_producer_"+link.getSourceAddressName());
 	}
 
 	@Override
@@ -49,30 +51,32 @@ public class BGPProducer extends Thread{
 			log.info(isConnected+"/"+bgpOpenCommandProcessed+"/"+link.isAlive());
 			try {
 				if(!isConnected){
-					//socket.setSoTimeout(TimeOutUtils.READ_SOMTIMEOUT);
+					socket.setSoTimeout(TimeOutUtils.READ_SOMTIMEOUT);
+					log.info("Starting connection");
 					socket.connect(inetSocketAddress);
 					outStream = new DataOutputStream(socket.getOutputStream());
 					inStream = new DataInputStream(socket.getInputStream());
 					isConnected = true;
+					log.info("Connected");
 				}
 			}catch (UnknownHostException e) {
-				//log.severe(e.getMessage());
+				log.error("Unknown Host "+e.getMessage());
 				e.printStackTrace();
 			} catch(SocketTimeoutException exception){
-				log.info("No response from " + link.getDestinationRouterName());
+				log.error("No response from " + link.getDestinationRouterName());
 				link.setAlive(false);
 			} catch(ConnectException exception){
 				try {
-					log.info("Could not connect to " + link.getDestinationRouterName());
+					log.error("Could not connect to " + link.getDestinationRouterName());
 					isConnected = false;
 					link.setAlive(false);
 					Thread.sleep(TimeOutUtils.RECONNECT_TIME);
 				} catch (InterruptedException e) {
-					//log.severe(e.getMessage());
+					log.error(e.getMessage());
 					e.printStackTrace();
 				}
 			} catch (IOException e) {
-				//log.severe(e.getMessage());
+				log.error(e.getMessage());
 				e.printStackTrace();
 			}
 			if(isConnected && !bgpOpenCommandProcessed){
@@ -93,7 +97,7 @@ public class BGPProducer extends Thread{
 				if(inStream!=null)inStream.close();
 				if(outStream!=null)outStream.close();
 			} catch (IOException e) {
-				log.severe("Error closing connections" + e.getMessage());
+				log.error("Error closing connections" + e.getMessage());
 			}
 		}
 	}
@@ -101,45 +105,42 @@ public class BGPProducer extends Thread{
 	 * Sends a output stream and then waits for a input stream, this input stream is usually the ACK stream that the OPEN Connection was accepted.
 	 * @param inStream
 	 * @param outStream
-	 * @return
+	 * @return 
 	 */
 	private boolean toSendOPEN(DataInputStream inStream, DataOutputStream outStream, InetAddress address){
 		try {
-			this.sleep(3000);
+			Thread.sleep(3000);
 			log.info("Writing to address:"+address);
-			outStream.writeBytes("open:someautonomoussys:5:"+bgpConfig.getRouterName()+":param1:param2:param2\n");
-			String response = "";
-			byte temp = 0;
-			while((temp = inStream.readByte()) != '\n'){
-				response = response + new String(new byte[]{temp});
-			}
-			log.info("Received message " + response);
-			if(response.contains("keepalive")){
-				link.setAlive(true);
-				return true;
-			}
-		} /*catch(SocketTimeoutException exception){
+			BgpOpenPacket bgpOpenPacket = new BgpOpenPacket();
+			bgpOpenPacket.setVersion(new Byte[]{Byte.parseByte("4",10)});
+			bgpOpenPacket.setAutonomousSystem(new Byte[]{Byte.parseByte("44",10),Byte.parseByte("66",10)});
+			bgpOpenPacket.setHoldTime(new Byte[]{Byte.parseByte("0",10),Byte.parseByte("5",10)});
+			bgpOpenPacket.setBgpIdentifier(new Byte[]{Byte.parseByte("-2",10),Byte.parseByte("56",10),Byte.parseByte("34",10),Byte.parseByte("12",10),});
+			byte[] openPacket = bgpOpenPacket.prepareOpenSegment();
+			outStream.write(openPacket, 0, openPacket.length);
+		} catch(SocketTimeoutException exception){
 			log.info("Waited for keepalive response till "+TimeOutUtils.READ_SOMTIMEOUT+" milli-seconds, nothing happened.");
 			return false;
-		}*/ catch (IOException e) {
-			//log.severe(e.getMessage());
-			e.printStackTrace();
+		} catch (IOException e) {
+			log.error(e.getMessage());
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error(e.getMessage());
+		} catch(Exception e){
+			log.error(e.getMessage());
 		}
-		return false;
+		return true;
 	}
-/*	private void toSendKEEPALIVE(DataInputStream inStream, DataOutputStream outStream){
+	private void toSendKEEPALIVE(DataInputStream inStream, DataOutputStream outStream){
 		try {
-			
-			outStream.writeBytes("KEEPALIVE");
+			BgpKeepalivePacket bgpKAPacket = new BgpKeepalivePacket();
+			byte[] kaPacket = bgpKAPacket.prepareKeepAliveSegment();
+			outStream.write(kaPacket, 0, kaPacket.length);
 		} catch(SocketTimeoutException exception){
-			System.out.println("Waited for ACK response till 3 seconds, nothing happened.");
+			log.info("Waited for ACK response till 3 seconds, nothing happened.");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}*/
+	}
 	private void toSendUPDATE(){
 		
 	}
@@ -161,5 +162,18 @@ public class BGPProducer extends Thread{
 		}
 		return response;
 	}
-	
+
+	public BgpConfig getBgpConfig(){
+		return this.bgpConfig;
+	}   
+	public boolean isProducerAlive(){
+		return this.link.isAlive();
+	}   
+	/*public void setProducerName(String name){
+		this.producerName = name;
+	}   
+	public String getProducerName(){
+		return this.producerName;
+	} */  
+
 }
