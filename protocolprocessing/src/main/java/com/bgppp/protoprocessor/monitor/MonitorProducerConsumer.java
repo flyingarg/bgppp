@@ -9,7 +9,10 @@ import org.apache.log4j.*;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import javax.servlet.*;
+import org.eclipse.jetty.webapp.WebAppContext;
+import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.server.Handler;
+
 import com.bgppp.protoprocessor.web.*;
 
 public class MonitorProducerConsumer extends Thread{
@@ -30,18 +33,27 @@ public class MonitorProducerConsumer extends Thread{
 		/*
 		 * Jersey initiation
 		 */
+		Server jettyServer = new Server(8787);
+		
 		ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		context.setContextPath("/");
-		Server jettyServer = new Server(8787);
-		jettyServer.setHandler(context);
 		ServletHolder jerseyServlet = context.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/*");
 		jerseyServlet.setInitOrder(0);
 		jerseyServlet.setInitParameter("jersey.config.server.provider.classnames",Stats.class.getCanonicalName());
+		
+		WebAppContext jerseyPocClientWebApp = new WebAppContext();
+		jerseyPocClientWebApp.setWar("/repo/Programming/Java/bgppp/gui/target/gui.war");
+		jerseyPocClientWebApp.setContextPath("/gui");
+	
+		HandlerCollection handlerCollection = new HandlerCollection();
+		handlerCollection.setHandlers(new Handler[]{jerseyPocClientWebApp,context});
+		jettyServer.setHandler(handlerCollection);
+
 		try {
 			jettyServer.start();
 			jettyServer.join();
 		} catch(Exception e){
-			//log.error(e.getMessagte());
+			log.error(e.getMessage());
 		} finally {
 			jettyServer.destroy();
 		}

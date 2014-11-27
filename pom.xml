@@ -7,8 +7,8 @@
     <packaging>pom</packaging>
     <name>bgppp</name>
     <modules>
-        <module>protocolprocessing</module>
 		<module>gui</module>
+        <module>protocolprocessing</module>
     </modules>
     <!-- shit -->
     <!-- commit from mohit052-->
