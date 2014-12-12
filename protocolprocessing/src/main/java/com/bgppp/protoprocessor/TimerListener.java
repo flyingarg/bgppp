@@ -1,5 +1,5 @@
 package com.bgppp.protoprocessor;
 
-public interface KeepAliveListener{
+public interface TimerListener{
 	public void timeUp();
 }

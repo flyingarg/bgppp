@@ -2,51 +2,91 @@ package com.bgppp.protoprocessor;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.ConnectException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import org.apache.log4j.*;
+import java.util.Date;
+import java.util.UUID;
+
+import org.apache.log4j.Logger;
+
 import com.bgppp.protoprocessor.graphs.TimeOutUtils;
+import com.bgppp.protoprocessor.utils.ControlledRandom;
+import com.bgppp.protoprocessor.utils.GetProperties;
 
-import com.bgppp.protoprocessor.utils.*;
-import com.bgppp.protoprocessor.packet.*;
-
-public class BgpProducer extends Thread{
+public class BgpProducer extends BgpOperations implements TimerListener{
 	public static Logger log = Logger.getLogger(BgpProducer.class.getName());
 	private BgpConfig bgpConfig = null;
 	private Link link = null;
-	private DataInputStream is = null;
-	private PrintStream os = null;
 	private int PORT = GetProperties.bgpPort;
+	private DataOutputStream outputStream = null;
+	private DataInputStream inputStream = null;
 	private boolean isRunning = true;
-	//private String producerName = "";
+
+	public KeepAliveTimer kaTimer = null;
+	public ConnectRetryTimer connectRetryTimer = null;
+	public HoldTimer holdTimer = null;
+	private Socket socket = null;
+	private KeepAliveSender kaSender = null;
+	private int totalBgpPackets = 0;
+	private int countKA = 0;
+	private int countOpen = 0;
+	private int countUpdate = 0;
+	private int countOthers = 0;
+	private int countNotification = 0;
+
 	public boolean isRunning() {
 		return isRunning;
 	}
-
 	public void setRunning(boolean isRunning) {
+		if(!isRunning)this.kaTimer.setRunning(false);
 		this.isRunning = isRunning;
 	}
 	public BgpProducer(BgpConfig bgpConfig, Link link){
 		this.bgpConfig = bgpConfig;
 		this.link = link;
-		this.setName(bgpConfig.getRouterName()+"_producer_"+link.getSourceAddressName());
+		this.setName(bgpConfig.getRouterName()+"_producer_"+link.getDestinationAddress()+UUID.randomUUID());
+		this.kaTimer = new KeepAliveTimer(this.getName(), (new Date()).getTime(), this);
+		this.connectRetryTimer = new ConnectRetryTimer("", (new Date()).getTime(), this);
+		this.holdTimer = new HoldTimer("", (new Date()).getTime(), this);
+	}
+	
+	@Override
+	public void timeUp() {
+		try {
+			if(socket != null)
+			socket.close();
+			this.kaTimer.setRunning(false);
+			this.connectRetryTimer.setRunning(false);
+			this.holdTimer.setRunning(false);
+			this.kaSender.setRunning(false);
+			setRunning(false);
+		} catch (IOException e) {
+			log.error(e.getMessage());
+		}
+		setRunning(false);
 	}
 
 	@Override
 	public void run(){
 		log.info("Starting Producer : " + bgpConfig.getRouterName() + ":" +link);
 		InetSocketAddress inetSocketAddress = new InetSocketAddress(link.getDestinationAddress(), PORT);
-		Socket socket = new Socket();
-		DataOutputStream outStream = null;
-		DataInputStream inStream = null;
+		socket = new Socket();
 		boolean isConnected = false;
 		boolean bgpOpenCommandProcessed = false;
+		try{
+			int randomInt = ControlledRandom.nextInt(2,10);
+			log.info("Sleeping for " + (randomInt*1000) );
+			BgpProducer.sleep(randomInt * 1000);
+		}catch(InterruptedException e){
+			log.error(e.getMessage());
+		}
+		this.kaTimer.start();
 		while(isRunning()){
 			log.info(isConnected+"/"+bgpOpenCommandProcessed+"/"+link.isAlive());
 			try {
@@ -54,8 +94,9 @@ public class BgpProducer extends Thread{
 					socket.setSoTimeout(TimeOutUtils.READ_SOMTIMEOUT);
 					log.info("Starting connection");
 					socket.connect(inetSocketAddress);
-					outStream = new DataOutputStream(socket.getOutputStream());
-					inStream = new DataInputStream(socket.getInputStream());
+					outputStream = new DataOutputStream(socket.getOutputStream());
+					inputStream = new DataInputStream(socket.getInputStream());
+					this.kaSender = new KeepAliveSender("KAS-"+this.getName(),inputStream, outputStream, log);
 					isConnected = true;
 					log.info("Connected");
 				}
@@ -80,67 +121,85 @@ public class BgpProducer extends Thread{
 				e.printStackTrace();
 			}
 			if(isConnected && !bgpOpenCommandProcessed){
-				bgpOpenCommandProcessed = toSendOPEN(inStream, outStream, link.getDestinationAddress());
+				bgpOpenCommandProcessed = toSendOPEN(inputStream, outputStream, log);
 			}
 			if(isConnected && bgpOpenCommandProcessed){
-				String response = readResponse(inStream);
-				if(response.startsWith("keepalive")){
-					link.setAlive(true);
-				}else{
-					log.info("UNRECOGNIZABLE RESPONSE : " + response);
+				log.info("Connected and open command sent");
+				try{
+					byte[] packRest = null;
+					int ffByteCount = 0;
+					while(this.isRunning()){
+						if(!this.kaTimer.isRunning()){
+							this.setRunning(false);
+							socket.close();
+						}
+						byte bite = 0;
+						try{
+							bite = inputStream.readByte();
+						}catch(EOFException e){
+						}
+						if(bite == (byte)255){
+							ffByteCount+=1;
+						}else{
+							ffByteCount = 0;
+						}
+						if(ffByteCount == 16){
+							totalBgpPackets+=1;
+							byte[] packLen = new byte[2];
+							inputStream.read(packLen);
+							byte[] packType = new byte[1];
+							inputStream.read(packType);
+							if(getInt(packLen) >= 19) 
+								packRest = new byte[getInt(packLen)-19];
+							inputStream.read(packRest);
+							ffByteCount = 0;
+							processPacket(getInt(packLen),getInt(packType),packRest);
+						}
+					}
+					log.info("CT exited isRunning");
+				}catch(Exception e){ 
+					timeUp();
 				}
 			}
 		}
 		if(!isRunning()){
+			log.info("Someone set running to false");
 			try {
 				if(socket!=null)socket.close();
-				if(inStream!=null)inStream.close();
-				if(outStream!=null)outStream.close();
+				if(inputStream!=null)inputStream.close();
+				if(outputStream!=null)outputStream.close();
 			} catch (IOException e) {
 				log.error("Error closing connections" + e.getMessage());
 			}
 		}
 	}
-	/**
-	 * Sends a output stream and then waits for a input stream, this input stream is usually the ACK stream that the OPEN Connection was accepted.
-	 * @param inStream
-	 * @param outStream
-	 * @return 
-	 */
-	private boolean toSendOPEN(DataInputStream inStream, DataOutputStream outStream, InetAddress address){
-		try {
-			Thread.sleep(3000);
-			log.info("Writing to address:"+address);
-			BgpOpenPacket bgpOpenPacket = new BgpOpenPacket();
-			bgpOpenPacket.setVersion(new Byte[]{Byte.parseByte("4",10)});
-			bgpOpenPacket.setAutonomousSystem(new Byte[]{Byte.parseByte("44",10),Byte.parseByte("66",10)});
-			bgpOpenPacket.setHoldTime(new Byte[]{Byte.parseByte("0",10),Byte.parseByte("5",10)});
-			bgpOpenPacket.setBgpIdentifier(new Byte[]{Byte.parseByte("-2",10),Byte.parseByte("56",10),Byte.parseByte("34",10),Byte.parseByte("12",10),});
-			byte[] openPacket = bgpOpenPacket.prepareOpenSegment();
-			outStream.write(openPacket, 0, openPacket.length);
-		} catch(SocketTimeoutException exception){
-			log.info("Waited for keepalive response till "+TimeOutUtils.READ_SOMTIMEOUT+" milli-seconds, nothing happened.");
-			return false;
-		} catch (IOException e) {
-			log.error(e.getMessage());
-		} catch (InterruptedException e) {
-			log.error(e.getMessage());
-		} catch(Exception e){
-			log.error(e.getMessage());
+
+	public void processPacket(int packLen,int packType,byte[] packRest){
+		log.info("Packet received, type "+packType+" length "+ packLen);
+		switch(packType){
+			case 4: log.info("KeepAlive Packet");
+					countKA++;
+					this.kaTimer.resetCounter();
+					if(!kaSender.isRunning())kaSender.start();
+					break;
+			case 1: log.info("Open Packet");
+					this.kaTimer.resetCounter();
+					if(!kaSender.isRunning())kaSender.start();
+					countOpen++;
+					break;
+			case 2: log.info("Update Packet");
+					countUpdate++;
+					break;
+			case 3: log.info("Notificaiton Packet");
+					countNotification++;
+					break;
+			default:log.info("Malformed Packet");
+					countOthers++;
+					break;
 		}
-		return true;
-	}
-	private void toSendKEEPALIVE(DataInputStream inStream, DataOutputStream outStream){
-		try {
-			BgpKeepalivePacket bgpKAPacket = new BgpKeepalivePacket();
-			byte[] kaPacket = bgpKAPacket.prepareKeepAliveSegment();
-			outStream.write(kaPacket, 0, kaPacket.length);
-		} catch(SocketTimeoutException exception){
-			log.info("Waited for ACK response till 3 seconds, nothing happened.");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+
+	}   
+
 	private void toSendUPDATE(){
 		
 	}
@@ -168,12 +227,6 @@ public class BgpProducer extends Thread{
 	}   
 	public boolean isProducerAlive(){
 		return this.link.isAlive();
-	}   
-	/*public void setProducerName(String name){
-		this.producerName = name;
-	}   
-	public String getProducerName(){
-		return this.producerName;
-	} */  
+	}
 
 }

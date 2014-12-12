@@ -8,7 +8,7 @@ import java.net.Socket;
 import java.util.Date;
 import org.apache.log4j.*;
 
-public class BgpConsumerThread extends Thread implements KeepAliveListener{
+public class BgpConsumerThread extends BgpOperations implements TimerListener{
 	public static Logger log = Logger.getLogger(BgpConsumerThread.class.getName());
 	public Socket listen = null;
 	public DataInputStream inputStream = null;
@@ -16,8 +16,12 @@ public class BgpConsumerThread extends Thread implements KeepAliveListener{
 	public boolean running = true;
 	public boolean alive = true;
 	public Long keepAliveTimer = (new Date()).getTime();
-	public KeepAliveCountdown countdown = null;
-	
+	public KeepAliveTimer kaTimer = null;
+	private KeepAliveSender kaSender = null;
+	public ConnectRetryTimer connectRetryTimer = null;
+	public HoldTimer holdTimer = null;
+	private BgpProducer bgpProducer = null;
+
 	private int totalBgpPackets = 0;
 	private int countKA = 0;
 	private int countOpen = 0;
@@ -26,25 +30,30 @@ public class BgpConsumerThread extends Thread implements KeepAliveListener{
 	private int countNotification = 0;
 	private boolean open = false;
 
-	public BgpConsumerThread(Socket listen, DataInputStream inputStream, DataOutputStream outputStream/*, KeepAliveCountdown countdown*/){
+	public FSMState fsmState = null;
+
+	public BgpConsumerThread(Socket listen, DataInputStream inputStream, DataOutputStream outputStream, BgpProducer bgpProducer, String name){
 		this.listen = listen;
 		this.inputStream = inputStream;
 		this.outputStream = outputStream;
+		this.bgpProducer = bgpProducer;
+		name = name + listen.getRemoteSocketAddress();
+		this.setName("CT-"+name);
+		this.kaTimer = new KeepAliveTimer(this.getName(), (new Date()).getTime(), this);this.kaTimer.start();
+		this.connectRetryTimer = new ConnectRetryTimer("", (new Date()).getTime(), this);
+		this.holdTimer = new HoldTimer("", (new Date()).getTime(), this);
+		this.kaSender = new KeepAliveSender("KAS-"+this.getName(),inputStream, outputStream, log);
 	}
 
 	@Override
 	public void run(){
-		//Is it safe to pass 'this' ??
-		this.countdown = new KeepAliveCountdown("", (new Date()).getTime(), this);
-		Date date = new Date();
-		Long timer = date.getTime();
+		fsmState = FSMState.CONNECT;
 		try{
 			byte[] packRest = null;
 			int ffByteCount = 0;
 			while(this.isRunning()){
-				if((new Date().getTime()) > (timer)+60000){
+				if(!this.kaTimer.isRunning()){
 					this.setRunning(false);
-					log.info("Now " + (new Date().getTime()));
 					listen.close();
 				}
 				byte bite = 0;
@@ -67,8 +76,13 @@ public class BgpConsumerThread extends Thread implements KeepAliveListener{
 					processPacket(getInt(packLen),getInt(packType),packRest);
 				}
 			}
+			log.info("CT exited isRunning");
 		}catch(EOFException eofe){
-			log.error(eofe.getMessage());
+			try{
+				timeUp();
+			}catch(Exception w){
+				log.error("Encountered EOF");
+			}
 		}catch(Exception e){
 			log.error(e.getMessage());
 		}
@@ -79,9 +93,12 @@ public class BgpConsumerThread extends Thread implements KeepAliveListener{
 		switch(packType){
 			case 4: log.info("KeepAlive Packet");
 					countKA++;
-					this.countdown.resetCounter();
+					this.kaTimer.resetCounter();
 					break;
 			case 1: log.info("Open Packet");
+					toSendOPEN(inputStream, outputStream, log);
+					kaSender.start();
+					this.kaTimer.resetCounter();
 					countOpen++;
 					break;
 			case 2: log.info("Update Packet");
@@ -97,6 +114,13 @@ public class BgpConsumerThread extends Thread implements KeepAliveListener{
 
 	}
 
+	/**
+	 * @return the bgpProducer
+	 */
+	public BgpProducer getBgpProducer() {
+		return bgpProducer;
+	}
+
 	public int getCountKA(){
 		return this.countKA;
 	}
@@ -109,6 +133,15 @@ public class BgpConsumerThread extends Thread implements KeepAliveListener{
 	public int getCountNotification(){
 		return this.countNotification;
 	}
+
+	public FSMState getFsmState() {
+		return fsmState;
+	}
+
+	public void setFsmState(FSMState fsmState) {
+		this.fsmState = fsmState;
+	}
+
 	public int getCountOthers(){
 		return this.countOthers;
 	}
@@ -128,20 +161,14 @@ public class BgpConsumerThread extends Thread implements KeepAliveListener{
 	public void timeUp(){
 		try {
 			listen.close();
+			this.kaTimer.setRunning(false);
+			this.connectRetryTimer.setRunning(false);
+			this.holdTimer.setRunning(false);
+			this.kaSender.setRunning(false);
+			setRunning(false);
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error(e.getMessage());
 		}
 		setRunning(false);
-	}
-	public int getInt(byte[] bite){
-		String strInt = "";
-		for(int j=bite.length-1;j>-1;j--){
-			if (bite[j]<0)
-				strInt = (127 - bite[j]) + strInt;
-			else
-				strInt = bite[j] + strInt;
-		}
-		Integer r = new Integer(strInt);
-		return r.intValue();
 	}
 }

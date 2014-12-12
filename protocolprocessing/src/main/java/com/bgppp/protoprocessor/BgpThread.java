@@ -30,6 +30,7 @@ public class BgpThread extends Thread {
 			BgpProducer producer = new BgpProducer(config, link);
 			ProducerConsumerStore.addBgpProducer(producer);
 			producer.start();
+			consumer.setBgpProducer(producer);
 		}
 	}
 

@@ -1,18 +1,13 @@
 package com.bgppp.protoprocessor;
 
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import org.apache.log4j.*;
-
-import com.bgppp.protoprocessor.graphs.TimeOutUtils;
 
 import com.bgppp.protoprocessor.utils.*;
 
@@ -24,7 +19,7 @@ public class BgpConsumer extends Thread {
 	private DataOutputStream outStream = null;
 	private int PORT = GetProperties.bgpPort;
 	private boolean isRunning = false;
-	//private String consumerName = "";
+	private BgpProducer bgpProducer = null;
 	public HashMap<String, BgpConsumerThread> connsFromPeers = new HashMap<String, BgpConsumerThread>();
 	public boolean isRunning() {
 		return isRunning;
@@ -54,11 +49,15 @@ public class BgpConsumer extends Thread {
 			setRunning(true);
 			while(isRunning()){
 				Socket listen = serverSocket.accept();
+				log.info("Preventing " + "Producer : " + bgpConfig.getRouterName() + ":" +link + " from connecting and closing thread");
+				getBgpProducer().setRunning(false);
 				BgpConsumerThread consumerThread = new BgpConsumerThread(listen
 						,new DataInputStream(listen.getInputStream())
 						,new DataOutputStream(listen.getOutputStream())
-						/*,new KeepAliveCountdown(link.getSourceAddressName()+link.getDestinationAddress(), (new Date()).getTime())*/);
-				connsFromPeers.put(getBgpConfig().getRouterName()+link.getSourceAddressName()+link.getDestinationAddress(), consumerThread);
+						,getBgpProducer()
+						,this.getName());
+				InetAddress remoteAddress = ((InetSocketAddress)listen.getRemoteSocketAddress()).getAddress();
+				connsFromPeers.put(getBgpConfig().getRouterName()+link.getSourceAddressName() + (remoteAddress == link.getDestinationAddress() ? link.getDestinationAddress().toString() : remoteAddress.toString()), consumerThread);
 				consumerThread.start();
 			}
 		}catch(Exception e){
@@ -71,6 +70,21 @@ public class BgpConsumer extends Thread {
 	public boolean isConsumerAlive(){
 		return this.link.isAlive();
 	}
+
+	/**
+	 * @return the bgpProducer
+	 */
+	public BgpProducer getBgpProducer() {
+		return bgpProducer;
+	}
+
+	/**
+	 * @param bgpProducer the bgpProducer to set
+	 */
+	public void setBgpProducer(BgpProducer bgpProducer) {
+		this.bgpProducer = bgpProducer;
+	}
+
 	public HashMap<String, BgpConsumerThread> getConnsFromPeers(){
 		return this.connsFromPeers;
 	}
