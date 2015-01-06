@@ -15,6 +15,7 @@ public class Link extends GraphPath{
 	private String destinationRouterName;//name of the bgp peer.
 	private Integer nativePort;//port being used to connect to the destination. destination port is always 179
 	private boolean isAlive;
+	private InetAddress sourceAddress;
 	public String getSourceAddressName() {
 		return sourceAddressName;
 	}
@@ -44,6 +45,12 @@ public class Link extends GraphPath{
 	}
 	public void setAlive(boolean isAlive) {
 		this.isAlive = isAlive;
+	}
+	public InetAddress getSourceAddress() {
+		return sourceAddress;
+	}
+	public void setSourceAddress(InetAddress sourceAddress) {
+		this.sourceAddress = sourceAddress;
 	}
 	@Override
 	public String toString() {

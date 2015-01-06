@@ -13,7 +13,7 @@ import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
+import org.apache.log4j.*;
 
 import com.bgppp.protoprocessor.graphs.TimeOutUtils;
 import com.bgppp.protoprocessor.utils.ControlledRandom;

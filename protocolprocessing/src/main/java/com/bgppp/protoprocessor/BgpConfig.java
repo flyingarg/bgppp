@@ -85,6 +85,7 @@ public class BgpConfig extends GraphNode{
 
 		}
 		Link link = new Link(this,new Long("0"));
+		link.setSourceAddress(getAddressAndMaskByName(localAddressName).getAddress());
 		link.setSourceAddressName(localAddressName);
 		link.setDestinationAddress(remoteAddress);
 		this.links.add(link);

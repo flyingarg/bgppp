@@ -7,20 +7,13 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+import org.junit.Ignore;
 
-public class TestRobustServer extends TestCase{
+public class TestRobustServer {
 
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
-	}
-	
-	@Override
-	protected void tearDown() throws Exception {
-		super.tearDown();
-	}
-	
+	@Test
+	@Ignore
 	public void testServerConnectionLimits() throws Exception{
 		MyServer server = new MyServer();
 		server.setMaxConnections(4);
@@ -62,6 +55,7 @@ public class TestRobustServer extends TestCase{
 				StreamListener streamListener = new StreamListener(""+listen.getPort(), listen);
 				streamListener.run(); // what the fuck is the diff between run and start ?
 				//System.out.println("exit");
+				serverSocket.close();
 			}
 			//As soon as the connections are created this thing exits i guess, so only half the requests are handled.
 		}
@@ -88,7 +82,6 @@ public class TestRobustServer extends TestCase{
 		public void run() {
 			try{
 				DataInputStream dis = new DataInputStream(listen.getInputStream());
-				String line = "";
 				byte temp = 0;
 				while((temp = dis.readByte()) != '\n'){
 					System.out.print(listen.getPort());System.out.println((char)temp);

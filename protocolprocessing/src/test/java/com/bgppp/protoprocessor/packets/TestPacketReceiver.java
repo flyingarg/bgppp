@@ -1,8 +1,7 @@
 package com.bgppp.protoprocessor.packets;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.EOFException;
+//import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -10,27 +9,23 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Date;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+import org.junit.Ignore;
 
-public class TestPacketReceiver extends TestCase{
+import static org.junit.Assert.assertNotNull;
+
+public class TestPacketReceiver{
 
 	//public static Logger log = Logger.getLogger(TestPacketReceiver.class.getName());
 	public int packetsConnected = 0;
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
-	}
-	
-	@Override
-	protected void tearDown() throws Exception {
-		super.tearDown();
-	}
 	
 	/**
 	 * Run this case with the wireshark running and you should be able to see packets.
 	 * Just to assist in analyzing all the packets being create. 
 	 * NOT really a TEST case.
 	 */
+	@Test
+	@Ignore
 	public void testIncomingPackets(){
 		ServerSocket socket = null;
 		Socket listen = null;
@@ -50,7 +45,7 @@ public class TestPacketReceiver extends TestCase{
 			try{
 				listen = socket.accept();
 				DataInputStream dataInput = new DataInputStream(listen.getInputStream());
-				DataOutputStream dataOutput = new DataOutputStream(listen.getOutputStream());
+				//DataOutputStream dataOutput = new DataOutputStream(listen.getOutputStream());
 				//byte bite = 0;
 				String response = null;
 				boolean isReading = true;
@@ -89,10 +84,11 @@ public class TestPacketReceiver extends TestCase{
 				}
 				System.out.println("-"+response);
 				listen.close();
-				assertNotNull(response);
+				assertNotNull(null);
 			}catch(Exception exception){
 				try {
 					listen.close();
+					socket.close();
 				} catch (IOException e) {
 
 				}
