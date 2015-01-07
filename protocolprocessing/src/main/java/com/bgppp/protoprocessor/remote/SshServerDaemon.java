@@ -17,19 +17,20 @@ public class SshServerDaemon extends Thread{
 
 	public static Logger log  = Logger.getLogger(SshServerDaemon.class.getName());
 	private BgpConfig config = null;
-	
+	private int PORT = 2222;
 	public SshServerDaemon(BgpConfig config){
 			this.config = config;
-			setName(config.getRouterName());
+			setName(config.getRouterName()+"_SSH");
 	}   
 
 	public void run(){
 		try{
 			SshServer sshd = SshServer.setUpDefaultServer();
-			sshd.setPort(2222);
-			sshd.setHost(config.getLinks().get(0).getSourceAddress().toString());
+			sshd.setPort(PORT);
+			String hostname = config.getLinks().get(0).getSourceAddress().toString().replaceFirst("/","").trim();
+			sshd.setHost(hostname);
 			sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider("/repo/hostkey.ser"));
-			sshd.setShellFactory(new EchoShellFactory());
+			sshd.setShellFactory(new EchoShellFactory(config));
 			sshd.setCommandFactory(new ScpCommandFactory(new CommandFactory() {
 				public Command createCommand(String command) {
 					return new ProcessShellFactory(command.split("<SPAN class=\"code-quote\">\" ")).create();
@@ -41,8 +42,10 @@ public class SshServerDaemon extends Thread{
 				}
 			});
 			sshd.start();
+			log.info("Starting server "+ getName() +" at port:"+PORT+" on address:"+config.getLinks().get(0).getSourceAddress().toString());
 		}catch(Exception e){
-			log.error(e.getMessage());
+			log.error("SSH Server Stopped "+e.getMessage());
+			e.printStackTrace();
 		}
 	}
 	

@@ -10,6 +10,9 @@ import org.apache.sshd.common.Factory;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
+import com.bgppp.protoprocessor.ProducerConsumerStore;
+import com.bgppp.protoprocessor.BgpConfig;
+import org.apache.log4j.*;
 /*
  * Copied from <a href="https://svn.apache.org/repos/asf/mina/sshd/trunk/sshd-core/src/test/java/org/apache/sshd/util/EchoShellFactory.java">Apache MINA SSHD Project</a>
  * They did not include these in the latest releases, considering these are only util files.
@@ -17,9 +20,15 @@ import org.apache.sshd.server.ExitCallback;
  * Modifying it so that we can use custom commands
  */
 public class EchoShellFactory implements Factory<Command> {
+	public static final Logger log = 	Logger.getLogger(EchoShellFactory.class);
+	private BgpConfig config = null;
+
+	public EchoShellFactory(BgpConfig config){
+		this.config = config;
+	}
 
 	public Command create() {
-		return new EchoShell();
+		return new EchoShell(config);
 	}
 
 	public static class EchoShell implements Command, Runnable {
@@ -30,6 +39,12 @@ public class EchoShellFactory implements Factory<Command> {
 		private ExitCallback callback;
 		private Environment environment;
 		private Thread thread;
+		private BgpConfig config = null;
+
+
+		public EchoShell(BgpConfig config){
+			this.config = config;
+		}
 
 		public InputStream getIn() {
 			return in;
@@ -81,16 +96,52 @@ public class EchoShellFactory implements Factory<Command> {
 					if (s == null) {
 						return;
 					}
-					out.write((s + "\n").getBytes());
-					out.flush();
 					if ("exit".equals(s)) {
 						return;
 					}
+					s = processInput(s);
+					out.write((s + "\n").getBytes());
+					out.flush();
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
 				callback.onExit(0);
+			}
+		}
+
+		public String processInput(String s){
+			String response = "";
+			if(ProducerConsumerStore.hasNewUpdates()){
+				for(String key : ProducerConsumerStore.getBgpProducersMap().keySet()){
+					if(!key.contains(config.getRouterName()))
+						continue;
+					String name = ProducerConsumerStore.getBgpProducersMap().get(key).getName();
+					boolean alive = ProducerConsumerStore.getBgpProducersMap().get(key).isAlive();
+					boolean running = ProducerConsumerStore.getBgpProducersMap().get(key).isRunning();
+					response = "Name: " + name + "|Alive: " + alive + "|Running: " + running + "|\n";
+				}
+				for(String key : ProducerConsumerStore.getBgpConsumersMap().keySet()){
+					for(String k : ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().keySet()){
+						if(!key.contains(config.getRouterName()))
+							continue;
+						String name = k;
+						int nuOfKASentRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountKA();
+						int nuOfOpenRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountOpen();
+						int nuOfUpdateRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountUpdate();
+						int nuOfNotificationsRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountNotification();
+						boolean alive = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).isAlive();
+						boolean running = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).isRunning();
+						int nuOfMalformedRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountMalformed();
+						response += "|Name: " + name + "|Alive: " + alive + "|Running: " + running + "|MalformedCount: " + nuOfMalformedRcvd + "\n";
+						response += "|KACount: " + nuOfKASentRcvd + "|OpenCount: " + nuOfOpenRcvd + "|UpdateCount: " + nuOfUpdateRcvd + "|NotificationCount: " + nuOfNotificationsRcvd +"|"; 
+					}
+				}
+			}
+			if(s.trim().equals("stats")){
+				return response;
+			}else{
+				return s;
 			}
 		}
 	}

@@ -30,14 +30,13 @@ public class BgpThread extends Thread {
 				}
 			}
 			
-			//Start the ssh server!!
-			SshServerDaemon server = new SshServerDaemon(config);
-			server.start();
-			
 			BgpProducer producer = new BgpProducer(config, link);
 			ProducerConsumerStore.addBgpProducer(producer);
 			producer.start();
 			consumer.setBgpProducer(producer);
 		}
+		//Start one ssh server on each router!!
+		SshServerDaemon server = new SshServerDaemon(config);
+		server.start();
 	}
 }

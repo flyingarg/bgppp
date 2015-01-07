@@ -42,7 +42,7 @@ public class MonitorProducerConsumer extends Thread{
 		jerseyServlet.setInitParameter("jersey.config.server.provider.classnames",Stats.class.getCanonicalName());
 		
 		WebAppContext jerseyPocClientWebApp = new WebAppContext();
-		jerseyPocClientWebApp.setWar("/repo/Programming/Java/bgppp/gui/target/gui.war");
+		jerseyPocClientWebApp.setWar("../../gui/target/gui.war");
 		jerseyPocClientWebApp.setContextPath("/gui");
 	
 		HandlerCollection handlerCollection = new HandlerCollection();
