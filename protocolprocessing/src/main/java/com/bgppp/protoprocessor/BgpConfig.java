@@ -84,11 +84,14 @@ public class BgpConfig extends GraphNode{
 			}
 
 		}
-		Link link = new Link(this,new Long("0"));
-		link.setSourceAddress(getAddressAndMaskByName(localAddressName).getAddress());
+		InetAddress source = getAddressAndMaskByName(localAddressName).getAddress();
+		Link link = new Link(super.getNodeName()+localAddressName+"-"+remoteAddress.toString().substring(1)
+				,""+(links.size()+1)
+				,source
+				,remoteAddress);
 		link.setSourceAddressName(localAddressName);
-		link.setDestinationAddress(remoteAddress);
 		this.links.add(link);
+		log.info("Added Link" + link);
 		return true;
 	}
 	

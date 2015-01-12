@@ -15,8 +15,6 @@ public class BgpConsumer extends Thread {
 	public static Logger log = Logger.getLogger(BgpConsumer.class.getName());
 	private BgpConfig bgpConfig = null;
 	private Link link = null;
-	private DataInputStream inStream = null;
-	private DataOutputStream outStream = null;
 	private int PORT = GetProperties.bgpPort;
 	private boolean isRunning = false;
 	private BgpProducer bgpProducer = null;
@@ -70,21 +68,12 @@ public class BgpConsumer extends Thread {
 	public boolean isConsumerAlive(){
 		return this.link.isAlive();
 	}
-
-	/**
-	 * @return the bgpProducer
-	 */
 	public BgpProducer getBgpProducer() {
 		return bgpProducer;
 	}
-
-	/**
-	 * @param bgpProducer the bgpProducer to set
-	 */
 	public void setBgpProducer(BgpProducer bgpProducer) {
 		this.bgpProducer = bgpProducer;
 	}
-
 	public HashMap<String, BgpConsumerThread> getConnsFromPeers(){
 		return this.connsFromPeers;
 	}

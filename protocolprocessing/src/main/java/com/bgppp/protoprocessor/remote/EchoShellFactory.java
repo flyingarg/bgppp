@@ -119,22 +119,37 @@ public class EchoShellFactory implements Factory<Command> {
 					String name = ProducerConsumerStore.getBgpProducersMap().get(key).getName();
 					boolean alive = ProducerConsumerStore.getBgpProducersMap().get(key).isAlive();
 					boolean running = ProducerConsumerStore.getBgpProducersMap().get(key).isRunning();
-					response = "Name: " + name + "|Alive: " + alive + "|Running: " + running + "|\n";
+					int nuOfOpenRcvd = ProducerConsumerStore.getBgpProducersMap().get(key).getCountOpen();
+					int nuOfKASentRcvd = ProducerConsumerStore.getBgpProducersMap().get(key).getCountKA();
+					int nuOfUpdateRcvd = ProducerConsumerStore.getBgpProducersMap().get(key).getCountUpdate();
+					int nuOfNotificationsRcvd = ProducerConsumerStore.getBgpProducersMap().get(key).getCountNotification();
+					int nuOfMalformedRcvd = ProducerConsumerStore.getBgpProducersMap().get(key).getCountMalformed();
+					response += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+					response += "PRODUCER-"+name+"\n";
+					response += "-------------------------------------------------------------------\n";
+					response += "|Alive: " + alive + "|Running: " + running + "|MalformedCount: " + nuOfMalformedRcvd ;
+					response += "|KACount: " + nuOfKASentRcvd + "|OpenCount: " + nuOfOpenRcvd + "|UpdateCount: " + nuOfUpdateRcvd + "|NotificationCount: " + nuOfNotificationsRcvd +"|\n"; 
+					response += "-------------------------------------------------------------------\n";
+					response += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n\n";
 				}
 				for(String key : ProducerConsumerStore.getBgpConsumersMap().keySet()){
+					if(!key.contains(config.getRouterName()))
+						continue;
 					for(String k : ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().keySet()){
-						if(!key.contains(config.getRouterName()))
-							continue;
 						String name = k;
+						boolean alive = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).isAlive();
+						boolean running = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).isRunning();
 						int nuOfKASentRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountKA();
 						int nuOfOpenRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountOpen();
 						int nuOfUpdateRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountUpdate();
 						int nuOfNotificationsRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountNotification();
-						boolean alive = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).isAlive();
-						boolean running = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).isRunning();
 						int nuOfMalformedRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountMalformed();
-						response += "|Name: " + name + "|Alive: " + alive + "|Running: " + running + "|MalformedCount: " + nuOfMalformedRcvd + "\n";
-						response += "|KACount: " + nuOfKASentRcvd + "|OpenCount: " + nuOfOpenRcvd + "|UpdateCount: " + nuOfUpdateRcvd + "|NotificationCount: " + nuOfNotificationsRcvd +"|"; 
+						response += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
+						response += "CONSUMER-"+name+"\n";
+						response += "-------------------------------------------------------------------\n";
+						response += "|Alive: " + alive + "|Running: " + running + "|MalformedCount: " + nuOfMalformedRcvd ;
+						response += "|KACount: " + nuOfKASentRcvd + "|OpenCount: " + nuOfOpenRcvd + "|UpdateCount: " + nuOfUpdateRcvd + "|NotificationCount: " + nuOfNotificationsRcvd +"|\n"; 
+						response += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
 					}
 				}
 			}

@@ -23,6 +23,8 @@ public class ConfigHelper {
 				if (parameters[i].trim().startsWith("[")) {//Name
 					String routerName = parameters[i].substring(parameters[i].indexOf("[") + 1,parameters[i].indexOf("]"));
 					config.setRouterName(routerName);
+					config.setNodeName(routerName);
+					config.setId(routerName);
 				} else if (parameters[i].trim().matches("[0-9a-zA-Z]*[-][0-9]*.[0-9]*.[0-9]*.[0-9]*")) {//Links
 					try {
 						config.addLink(parameters[i].split("-")[0].trim(), InetAddress.getByName(parameters[i].split("-")[1].trim()));

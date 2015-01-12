@@ -21,7 +21,7 @@ public class BgpOperations extends Thread{
 	 *@param outStream
 	 *@return 
 	 */
-	protected boolean toSendOPEN(DataInputStream inStream, DataOutputStream outStream, Logger log){
+	protected boolean toSendOPEN(DataInputStream inStream, DataOutputStream outStream, Logger log, String bgpIdentifier){
 		try {
 			log.info("toSendOPEN invoked");
 			Thread.sleep(3000);
@@ -29,18 +29,23 @@ public class BgpOperations extends Thread{
 			bgpOpenPacket.setVersion(new Byte[]{Byte.parseByte("4",10)});
 			bgpOpenPacket.setAutonomousSystem(new Byte[]{Byte.parseByte("44",10),Byte.parseByte("66",10)});
 			bgpOpenPacket.setHoldTime(new Byte[]{Byte.parseByte("0",10),Byte.parseByte("5",10)});
-			bgpOpenPacket.setBgpIdentifier(new Byte[]{Byte.parseByte("-2",10),Byte.parseByte("56",10),Byte.parseByte("34",10),Byte.parseByte("12",10),});
+			String[] i = bgpIdentifier.substring(1).trim().split("\\.");
+			log.info(bgpIdentifier);
+			bgpOpenPacket.setBgpIdentifier(new Byte[]{Byte.parseByte(i[0],10),Byte.parseByte(i[1],10),Byte.parseByte(i[2],10),Byte.parseByte(i[3],10),});
 			byte[] openPacket = bgpOpenPacket.prepareOpenSegment();
 			outStream.write(openPacket, 0, openPacket.length);
 		} catch(SocketTimeoutException exception){
 			log.info("Waited for keepalive response till "+TimeOutUtils.READ_SOMTIMEOUT+" milli-seconds, nothing happened.");
 			return false;
 		} catch (IOException e) {
-			log.error(e.getMessage());
+			log.error("IOException: "+e.getMessage());
+			return false;
 		} catch (InterruptedException e) {
-			log.error(e.getMessage());
+			log.error("InterruptedException: "+e.getMessage());
+			return false;
 		} catch(Exception e){ 
-			log.error(e.getMessage());
+			log.error("Exception:" + e.getMessage());
+			return false;
 		}
 		return true;
 	}

@@ -68,7 +68,6 @@ public class MonitorProducerConsumer extends Thread{
 			}
 			if(ProducerConsumerStore.hasNewUpdates()){
 				producerStatsList = new ArrayList<ProducerStats>();
-				log.info("Producer Stats : ");
 				for(String key : ProducerConsumerStore.getBgpProducersMap().keySet()){
 					ProducerStats proStat = new ProducerStats();
 					proStat.name = ProducerConsumerStore.getBgpProducersMap().get(key).getName();
@@ -85,7 +84,6 @@ public class MonitorProducerConsumer extends Thread{
 					log.info("Name: " + proStat.name + "|Alive: " + proStat.alive + "|Running: " + proStat.running + "|");
 				}
 				consumerStatsList = new ArrayList<ConsumerStats>();
-				log.info("Consumer Stats : ");
 				for(String key : ProducerConsumerStore.getBgpConsumersMap().keySet()){
 					for(String k : ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().keySet()){
 						ConsumerStats conStat = new ConsumerStats();

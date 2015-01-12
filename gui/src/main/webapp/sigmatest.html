@@ -68,9 +68,12 @@ function graphInit(){
 		container: 'graph-container'
 	});
 }
+
+//We can also get the data for a specific router
+//use http://127.0.0.1:8787/bgppp/stats/R1 to get details of the router R1, one can also just paste these url's on the browser and check the output. !!
 function onLoadHere(){
 	$.ajax({
-		url: 'http://127.0.0.1:8787/bgppp/stats',
+		url: 'http://127.0.0.1:8787/bgppp/stats/all',
 		async: false,
 		dataType: 'json',
 		success: function (data) {

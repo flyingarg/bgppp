@@ -96,7 +96,7 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 					this.kaTimer.resetCounter();
 					break;
 			case 1: log.info("Open Packet");
-					toSendOPEN(inputStream, outputStream, log);
+					toSendOPEN(inputStream, outputStream, log, listen.getLocalAddress().toString());
 					kaSender.start();
 					this.kaTimer.resetCounter();
 					countOpen++;

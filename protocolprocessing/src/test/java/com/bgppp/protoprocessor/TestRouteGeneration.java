@@ -4,13 +4,15 @@ import java.util.List;
 import java.util.Stack;
 
 import junit.framework.TestCase;
+import org.junit.Test;
+import org.junit.Ignore;
 
 //import com.bgppp.protoprocessor.graphs.BgpConfig;
 import com.bgppp.protoprocessor.graphs.GraphNode;
 //import com.bgppp.protoprocessor.graphs.Link;
 import com.bgppp.protoprocessor.graphs.GraphUtils;
 
-public class TestRouteGeneration extends TestCase{
+public class TestRouteGeneration {
 	BgpConfig node = new BgpConfig("node");
 	BgpConfig node1 = new BgpConfig("node1");
 	BgpConfig node2 = new BgpConfig("node2");
@@ -23,7 +25,7 @@ public class TestRouteGeneration extends TestCase{
 	BgpConfig node9 = new BgpConfig("node9");
 	NodeStore nodeStore = new NodeStore();
 	
-	@Override
+	/*
 	protected void setUp() throws Exception {
 		node.addPath(new Link(node1,new Long("1")));
 		node.addPath(new Link(node2,new Long("2")));
@@ -59,7 +61,9 @@ public class TestRouteGeneration extends TestCase{
 	protected void tearDown() throws Exception {
 	
 	}
-
+*/
+	@Test
+	@Ignore
 	public void testTraveling(){
 		Stack<GraphNode> nodes = new Stack<GraphNode>();
 		nodes.push(node8);
@@ -69,7 +73,7 @@ public class TestRouteGeneration extends TestCase{
 		for(String paths : response){
 			System.out.println(paths);
 		}
-		assertTrue(true);
+		//assertTrue(true);
 	}
 	
 	/*public void testGetWeightOfPath(){

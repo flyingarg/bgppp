@@ -2,20 +2,22 @@ package com.bgppp.protoprocessor;
 
 import java.net.InetAddress;
 
-import com.bgppp.protoprocessor.graphs.GraphNode;
 import com.bgppp.protoprocessor.graphs.GraphPath;
 
-
 public class Link extends GraphPath{
-	public Link(GraphNode node, Long weight) {
-		super(node, weight);
+	public Link(String pathName, String pathId, InetAddress source, InetAddress destination) {
+		super(pathName, pathId, source.toString().substring(1), destination.toString().substring(1));
+		this.sourceAddress = source;
+		this.destinationAddress = destination;
+		//this.destinationAddressName =  destination.toString().substring(1);
+		this.sourceAddressName = source.toString().replace("\\/","");
 	}
+	private InetAddress sourceAddress;
 	private String sourceAddressName;//self, but we need to determine which of the available interfaces is doing that.
 	private InetAddress destinationAddress;//address of the peer bgp router.
-	private String destinationRouterName;//name of the bgp peer.
-	private Integer nativePort;//port being used to connect to the destination. destination port is always 179
+	//private String destinationRouterName;//name of the bgp peer. on a second thought, it shoud not know remote bgp's name as the remote ip is the bgp identifier.
+	//private Integer nativePort;//port being used to connect to the destination. destination port is always 179
 	private boolean isAlive;
-	private InetAddress sourceAddress;
 	public String getSourceAddressName() {
 		return sourceAddressName;
 	}
@@ -28,7 +30,8 @@ public class Link extends GraphPath{
 	public void setDestinationAddress(InetAddress destinationAddress) {
 		this.destinationAddress = destinationAddress;
 	}
-	public String getDestinationRouterName() {
+
+	/*public String getDestinationRouterName() {
 		return destinationRouterName;
 	}
 	public void setDestinationRouterName(String destinationRouterName) {
@@ -39,7 +42,7 @@ public class Link extends GraphPath{
 	}
 	public void setNativePort(Integer nativePort) {
 		this.nativePort = nativePort;
-	}
+	}*/
 	public boolean isAlive() {
 		return isAlive;
 	}
@@ -55,10 +58,11 @@ public class Link extends GraphPath{
 	@Override
 	public String toString() {
 		String response="";
-		response += "sourceAddress:"+sourceAddressName;
+		response += "sourceAddress:"+sourceAddress;
+		response += ",sourceAddressName:"+sourceAddressName;
 		response += ",destinationAddress:"+destinationAddress;
-		response += ",destinationRouterName:"+destinationRouterName;
-		response += ",nativePort:"+nativePort;
+		response += ",pathId:"+super.getPathId();
+		response += ",pathName:"+super.getPathName();
 		return response;
 	}
 }

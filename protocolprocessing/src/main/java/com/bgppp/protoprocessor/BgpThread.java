@@ -3,6 +3,7 @@ package com.bgppp.protoprocessor;
 import org.apache.log4j.*;
 
 import com.bgppp.protoprocessor.remote.SshServerDaemon;
+import com.bgppp.protoprocessor.graphs.GraphPath;
 
 public class BgpThread extends Thread {
 
@@ -15,9 +16,10 @@ public class BgpThread extends Thread {
 
 	@Override
 	public void run() {
-
+		NodeStore.addNode(config);
 		//Start the threads
 		for (Link link : config.getLinks()) {
+			NodeStore.addPath(link);
 			BgpConsumer consumer = new BgpConsumer(config, link);
 			ProducerConsumerStore.addBgpConsumer(consumer);
 			consumer.start();

@@ -10,7 +10,7 @@ public class AddressAndMask {
 	private InetAddress address;
 	private String mask;
 	private String name;
-
+	private String routerName;
 	/**
 	 * Constructor
 	 * 
@@ -35,6 +35,12 @@ public class AddressAndMask {
 
 	public void setName(String name) {
 		this.name = name;
+	}
+	public String getRouterName() {
+		return routerName;
+	}
+	public void setRouterName(String routerName) {
+		this.routerName = routerName;
 	}
 
 	public InetAddress getAddress() {

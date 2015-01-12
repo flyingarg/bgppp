@@ -4,7 +4,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -39,7 +38,7 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 	private int countUpdate = 0;
 	private int countOthers = 0;
 	private int countNotification = 0;
-
+	private FSMState fsmState = null;
 	public boolean isRunning() {
 		return isRunning;
 	}
@@ -104,16 +103,16 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 				log.error("Unknown Host "+e.getMessage());
 				e.printStackTrace();
 			} catch(SocketTimeoutException exception){
-				log.error("No response from " + link.getDestinationRouterName());
+				log.error("No response from " + link.getDestinationAddress());
 				link.setAlive(false);
 			} catch(ConnectException exception){
 				try {
-					log.error("Could not connect to " + link.getDestinationRouterName());
+					log.error("Could not connect to " + link.getDestinationAddress());
 					isConnected = false;
 					link.setAlive(false);
 					Thread.sleep(TimeOutUtils.RECONNECT_TIME);
 				} catch (InterruptedException e) {
-					log.error(e.getMessage());
+					log.error("Interrupter " + e.getMessage());
 					e.printStackTrace();
 				}
 			} catch (IOException e) {
@@ -121,7 +120,8 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 				e.printStackTrace();
 			}
 			if(isConnected && !bgpOpenCommandProcessed){
-				bgpOpenCommandProcessed = toSendOPEN(inputStream, outputStream, log);
+				log.info(socket.getLocalAddress().toString());
+				bgpOpenCommandProcessed = toSendOPEN(inputStream, outputStream, log, socket.getLocalAddress().toString());
 			}
 			if(isConnected && bgpOpenCommandProcessed){
 				log.info("Connected and open command sent");
@@ -201,12 +201,12 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 	}   
 
 	private void toSendUPDATE(){
-		
+
 	}
 	private void toSendNOTIFICATION(){
-		
+
 	}
-	
+
 	private String readResponse(DataInputStream inStream){
 		String response = "";
 		try {
@@ -221,6 +221,36 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 		}
 		return response;
 	}
+	public int getCountKA(){
+		return this.countKA;
+	}
+	public int getCountOpen(){
+		return this.countOpen;
+	}
+	public int getCountUpdate(){
+		return this.countUpdate;
+	}   
+	public int getCountNotification(){
+		return this.countNotification;
+	}   
+
+	public FSMState getFsmState() {
+		return fsmState;
+	}   
+
+	public void setFsmState(FSMState fsmState) {
+		this.fsmState = fsmState;
+	}   
+
+	public int getCountOthers(){
+		return this.countOthers;
+	}   
+	public int getCountTotal(){
+		return this.totalBgpPackets;
+	}   
+	public int getCountMalformed(){
+		return this.countOthers;
+	}   
 
 	public BgpConfig getBgpConfig(){
 		return this.bgpConfig;
