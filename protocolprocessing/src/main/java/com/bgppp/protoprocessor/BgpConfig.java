@@ -85,7 +85,7 @@ public class BgpConfig extends GraphNode{
 
 		}
 		InetAddress source = getAddressAndMaskByName(localAddressName).getAddress();
-		Link link = new Link(super.getNodeName()+localAddressName+"-"+remoteAddress.toString().substring(1)
+		Link link = new Link(super.getNodeName()+"-"+localAddressName+"-"+remoteAddress.toString().substring(1)
 				,""+(links.size()+1)
 				,source
 				,remoteAddress);

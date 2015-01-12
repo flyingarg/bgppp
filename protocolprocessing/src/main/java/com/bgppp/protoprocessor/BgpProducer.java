@@ -10,7 +10,7 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.Date;
-import java.util.UUID;
+//import java.util.UUID;
 
 import org.apache.log4j.*;
 
@@ -45,11 +45,12 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 	public void setRunning(boolean isRunning) {
 		if(!isRunning)this.kaTimer.setRunning(false);
 		this.isRunning = isRunning;
+		setFsmState(FSMState.IDLE);
 	}
 	public BgpProducer(BgpConfig bgpConfig, Link link){
 		this.bgpConfig = bgpConfig;
 		this.link = link;
-		this.setName(bgpConfig.getRouterName()+"_producer_"+link.getDestinationAddress()+UUID.randomUUID());
+		this.setName(bgpConfig.getRouterName()+"_producer_"+link.getDestinationAddress());
 		this.kaTimer = new KeepAliveTimer(this.getName(), (new Date()).getTime(), this);
 		this.connectRetryTimer = new ConnectRetryTimer("", (new Date()).getTime(), this);
 		this.holdTimer = new HoldTimer("", (new Date()).getTime(), this);
@@ -73,6 +74,7 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 
 	@Override
 	public void run(){
+		setFsmState(FSMState.IDLE);
 		log.info("Starting Producer : " + bgpConfig.getRouterName() + ":" +link);
 		InetSocketAddress inetSocketAddress = new InetSocketAddress(link.getDestinationAddress(), PORT);
 		socket = new Socket();
@@ -97,6 +99,7 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 					inputStream = new DataInputStream(socket.getInputStream());
 					this.kaSender = new KeepAliveSender("KAS-"+this.getName(),inputStream, outputStream, log);
 					isConnected = true;
+					setFsmState(FSMState.CONNECT);
 					log.info("Connected");
 				}
 			}catch (UnknownHostException e) {
@@ -122,6 +125,7 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 			if(isConnected && !bgpOpenCommandProcessed){
 				log.info(socket.getLocalAddress().toString());
 				bgpOpenCommandProcessed = toSendOPEN(inputStream, outputStream, log, socket.getLocalAddress().toString());
+				setFsmState(FSMState.OPEN_SENT);
 			}
 			if(isConnected && bgpOpenCommandProcessed){
 				log.info("Connected and open command sent");
@@ -181,10 +185,12 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 					countKA++;
 					this.kaTimer.resetCounter();
 					if(!kaSender.isRunning())kaSender.start();
+					setFsmState(FSMState.ESTABLISHED);
 					break;
 			case 1: log.info("Open Packet");
 					this.kaTimer.resetCounter();
 					if(!kaSender.isRunning())kaSender.start();
+					setFsmState(FSMState.OPEN_CONFIRM);
 					countOpen++;
 					break;
 			case 2: log.info("Update Packet");
@@ -214,6 +220,7 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 			return response;
 		} catch(SocketTimeoutException exception){
 			log.info("Waited for SOME response till "+TimeOutUtils.READ_SOMTIMEOUT+" seconds, nothing happened.");
+			setFsmState(FSMState.IDLE);
 			link.setAlive(false);
 			setRunning(false);
 		} catch (IOException e) {

@@ -10,9 +10,9 @@
 </head>
 <body onload="onLoadHere()">
 <div id="container"></div>
-<script src="sigma.min.js"></script>
-<script src="jquery.js"></script>
-<script src="sigma.parsers.json.min.js"></script>
+<script src="scripts/sigma.min.js"></script>
+<script src="scripts/jquery.js"></script>
+<script src="scripts/sigma.parsers.json.min.js"></script>
 <div id="container">
 	<style>
 #graph-container {
@@ -36,10 +36,12 @@ function graphInit(){
 	nodes: [],
 		   edges: []
 		};
-
+	//TODO : This is how we are accessing data from the URL bgppp/stats/all!!. Now we need to write a script that automatically 
+	//reads the results and creates the required nodes and edges
+	alert(result.nodes[0].id);
 	g.nodes.push({
-	id: result.id,
-	label: 'Node 2',
+	id: result.nodes[0].id,
+	label: result.nodes[0].name,
 	x: Math.random(),
 	y: Math.random(),
 	size: Math.random(),
@@ -58,7 +60,7 @@ function graphInit(){
 	g.edges.push({
 	id: 'e',
 	source: 'n1',
-	target: 'n2',
+	target: result.nodes[0].id,
 	size: Math.random(),
 	color: '#ccc'
 	});

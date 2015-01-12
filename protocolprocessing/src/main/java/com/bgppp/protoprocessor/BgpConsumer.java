@@ -19,6 +19,7 @@ public class BgpConsumer extends Thread {
 	private boolean isRunning = false;
 	private BgpProducer bgpProducer = null;
 	public HashMap<String, BgpConsumerThread> connsFromPeers = new HashMap<String, BgpConsumerThread>();
+	private FSMState fsmState = null;
 	public boolean isRunning() {
 		return isRunning;
 	}
@@ -30,12 +31,13 @@ public class BgpConsumer extends Thread {
 	public BgpConsumer(BgpConfig bgpConfig, Link link) {
 		this.bgpConfig = bgpConfig;
 		this.link = link;
-		this.setName(bgpConfig.getRouterName() + "_consumer_" + link.getSourceAddressName());
+		this.setName(bgpConfig.getRouterName() + "_consumer_" + link.getSourceAddress());
 	}
 
 	@Override
 	public void run() {
 		log.info("Starting Consumer : " + bgpConfig.getRouterName() + ":" +link);
+		setFsmState(FSMState.IDLE);
 		ServerSocket serverSocket = null;
 		try {
 			InetAddress address = bgpConfig.getAddressAndMaskByName(link.getSourceAddressName()).getAddress();
@@ -47,9 +49,12 @@ public class BgpConsumer extends Thread {
 			setRunning(true);
 			while(isRunning()){
 				Socket listen = serverSocket.accept();
+				setFsmState(FSMState.CONNECT);
 				log.info("Preventing " + "Producer : " + bgpConfig.getRouterName() + ":" +link + " from connecting and closing thread");
 				getBgpProducer().setRunning(false);
-				BgpConsumerThread consumerThread = new BgpConsumerThread(listen
+				BgpConsumerThread consumerThread = new BgpConsumerThread(
+						this
+						,listen
 						,new DataInputStream(listen.getInputStream())
 						,new DataOutputStream(listen.getOutputStream())
 						,getBgpProducer()
@@ -76,5 +81,11 @@ public class BgpConsumer extends Thread {
 	}
 	public HashMap<String, BgpConsumerThread> getConnsFromPeers(){
 		return this.connsFromPeers;
+	}
+	public FSMState getFsmState() {
+		return fsmState;
+	}
+	public void setFsmState(FSMState fsmState) {
+		this.fsmState = fsmState;
 	}
 }

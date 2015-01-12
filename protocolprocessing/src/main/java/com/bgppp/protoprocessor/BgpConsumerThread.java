@@ -21,6 +21,7 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 	public ConnectRetryTimer connectRetryTimer = null;
 	public HoldTimer holdTimer = null;
 	private BgpProducer bgpProducer = null;
+	private BgpConsumer consumer = null;
 
 	private int totalBgpPackets = 0;
 	private int countKA = 0;
@@ -28,12 +29,10 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 	private int countUpdate = 0;
 	private int countOthers = 0;
 	private int countNotification = 0;
-	private boolean open = false;
 
-	public FSMState fsmState = null;
-
-	public BgpConsumerThread(Socket listen, DataInputStream inputStream, DataOutputStream outputStream, BgpProducer bgpProducer, String name){
+	public BgpConsumerThread(BgpConsumer consumer, Socket listen, DataInputStream inputStream, DataOutputStream outputStream, BgpProducer bgpProducer, String name){
 		this.listen = listen;
+		this.consumer = consumer;
 		this.inputStream = inputStream;
 		this.outputStream = outputStream;
 		this.bgpProducer = bgpProducer;
@@ -47,8 +46,8 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 
 	@Override
 	public void run(){
-		fsmState = FSMState.CONNECT;
 		try{
+			consumer.setFsmState(FSMState.ACTIVE);
 			byte[] packRest = null;
 			int ffByteCount = 0;
 			while(this.isRunning()){
@@ -94,9 +93,12 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 			case 4: log.info("KeepAlive Packet");
 					countKA++;
 					this.kaTimer.resetCounter();
+					consumer.setFsmState(FSMState.ESTABLISHED);
 					break;
 			case 1: log.info("Open Packet");
+					consumer.setFsmState(FSMState.OPEN_CONFIRM);
 					toSendOPEN(inputStream, outputStream, log, listen.getLocalAddress().toString());
+					consumer.setFsmState(FSMState.OPEN_SENT);
 					kaSender.start();
 					this.kaTimer.resetCounter();
 					countOpen++;
@@ -133,15 +135,6 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 	public int getCountNotification(){
 		return this.countNotification;
 	}
-
-	public FSMState getFsmState() {
-		return fsmState;
-	}
-
-	public void setFsmState(FSMState fsmState) {
-		this.fsmState = fsmState;
-	}
-
 	public int getCountOthers(){
 		return this.countOthers;
 	}
