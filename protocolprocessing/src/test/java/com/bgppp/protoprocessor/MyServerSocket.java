@@ -8,7 +8,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
@@ -27,6 +26,12 @@ public class MyServerSocket {
 	}
 }
 
+/**
+ * An Ignored Test cases so does not matter, but can be run as -> Test Case.  
+ * Notice the warnings in the test. We are not closing these on purpose
+ * @author rajumoh
+ *
+ */
 class Server extends Thread {
 
 	@Override
@@ -71,6 +76,7 @@ class Server extends Thread {
 
 class Client implements Runnable {
 
+	@SuppressWarnings("unused")
 	private boolean running = true;
 	private int trys = 3;
 	private String name;

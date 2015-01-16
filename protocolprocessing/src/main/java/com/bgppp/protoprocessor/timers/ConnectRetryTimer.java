@@ -1,9 +1,9 @@
-package com.bgppp.protoprocessor;
+package com.bgppp.protoprocessor.timers;
 
-import java.io.IOException;
 import java.util.Date;
 
 import com.bgppp.protoprocessor.utils.TimeOutUtils;
+
 import org.apache.log4j.*;
 
 public class ConnectRetryTimer extends Thread{
@@ -31,6 +31,7 @@ public class ConnectRetryTimer extends Thread{
 		this.counter = (new Date()).getTime();
 	}
 
+	@SuppressWarnings("static-access")
 	public void run() {
 		while (isRunning) {
 			try {

@@ -3,7 +3,8 @@ package com.bgppp.protoprocessor.graphs;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
-import org.apache.log4j.*;
+
+import org.apache.log4j.Logger;
 
 public class GraphUtils {
 	/**
@@ -17,6 +18,7 @@ public class GraphUtils {
 	 * @param destination
 	 * @param pathAdder
 	 */
+	@SuppressWarnings("unused")
 	private ArrayList<GraphNode> paths = new ArrayList<GraphNode>();
 	private List<String> listOfPaths = new ArrayList<String>();
 	public static Logger log = Logger.getLogger(GraphUtils.class.getName());	
@@ -49,6 +51,7 @@ public class GraphUtils {
 	}
 */
 	
+	@SuppressWarnings("unchecked")
 	public void tracePath2(Stack<GraphNode> nodesInPath, GraphNode currentNode){
 		log.info(nodesInPath.hashCode()+"NodesInPath=" + nodesInPath + "; currentNode=" + currentNode + ";Paths=" + currentNode.getPaths());
 		for(GraphPath branch : currentNode.getPaths()){

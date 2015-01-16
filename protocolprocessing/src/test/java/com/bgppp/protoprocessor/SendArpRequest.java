@@ -1,6 +1,5 @@
 package com.bgppp.protoprocessor;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ExecutorService;
@@ -21,7 +20,6 @@ import org.pcap4j.packet.namednumber.ArpOperation;
 import org.pcap4j.packet.namednumber.EtherType;
 import org.pcap4j.util.ByteArrays;
 import org.pcap4j.util.MacAddress;
-import org.pcap4j.util.NifSelector;
 
 @SuppressWarnings("javadoc")
 public class SendArpRequest {

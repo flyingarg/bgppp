@@ -1,4 +1,4 @@
-package com.bgppp.protoprocessor;
+package com.bgppp.protoprocessor.timers;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
+import com.bgppp.protoprocessor.BgpOperations;
 import com.bgppp.protoprocessor.utils.TimeOutUtils;
 
 public class KeepAliveSender extends BgpOperations{
@@ -15,6 +16,7 @@ public class KeepAliveSender extends BgpOperations{
 	DataOutputStream outputStream = null;
 	boolean isRunning = false;
 	
+	@SuppressWarnings("static-access")
 	public KeepAliveSender(String name, DataInputStream inputStream, DataOutputStream outputStream, Logger log){
 		this.inputStream = inputStream;
 		this.outputStream = outputStream;

@@ -3,7 +3,6 @@ package com.bgppp.protoprocessor;
 import java.util.List;
 import java.util.Stack;
 
-import junit.framework.TestCase;
 import org.junit.Test;
 import org.junit.Ignore;
 

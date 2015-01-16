@@ -3,17 +3,17 @@ package com.bgppp.protoprocessor;
 import org.apache.log4j.*;
 
 import com.bgppp.protoprocessor.remote.SshServerDaemon;
-import com.bgppp.protoprocessor.graphs.GraphPath;
 
 public class BgpThread extends Thread {
 
 	private BgpConfig config;
 	public static Logger log = Logger.getLogger(BgpThread.class.getName());
-	private boolean isRunning = true;
+	//private boolean isRunning = true;
 	public BgpThread(BgpConfig config) {
 		this.config = config;
 	}
 
+	@SuppressWarnings("static-access")
 	@Override
 	public void run() {
 		NodeStore.addNode(config);

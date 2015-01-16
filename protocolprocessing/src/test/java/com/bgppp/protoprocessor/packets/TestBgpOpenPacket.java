@@ -17,6 +17,7 @@ public class TestBgpOpenPacket extends TestCase {
 	
 	public void testSendingOpenPacket(){
 		try{
+			//Not being closed on purpose.
 			Socket socket = new Socket();
 			InetSocketAddress inetSocketAddress = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 179);
 			socket.connect(inetSocketAddress);

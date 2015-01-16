@@ -13,6 +13,11 @@ import java.util.Date;
 
 import org.apache.log4j.*;
 
+import com.bgppp.protoprocessor.timers.ConnectRetryTimer;
+import com.bgppp.protoprocessor.timers.HoldTimer;
+import com.bgppp.protoprocessor.timers.KeepAliveSender;
+import com.bgppp.protoprocessor.timers.KeepAliveTimer;
+import com.bgppp.protoprocessor.timers.TimerListener;
 import com.bgppp.protoprocessor.utils.TimeOutUtils;
 import com.bgppp.protoprocessor.utils.ControlledRandom;
 import com.bgppp.protoprocessor.utils.GetProperties;
@@ -205,7 +210,7 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 
 	}   
 
-	private void toSendUPDATE(){
+/*	private void toSendUPDATE(){
 
 	}
 	private void toSendNOTIFICATION(){
@@ -227,6 +232,7 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 		}
 		return response;
 	}
+*/
 	public int getCountKA(){
 		return this.countKA;
 	}

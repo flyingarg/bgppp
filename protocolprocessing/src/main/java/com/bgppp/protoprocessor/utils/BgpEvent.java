@@ -1,4 +1,4 @@
-package com.bgppp.protoprocessor;
+package com.bgppp.protoprocessor.utils;
 
 public enum BgpEvent{
 	Event1("ManualStart"),

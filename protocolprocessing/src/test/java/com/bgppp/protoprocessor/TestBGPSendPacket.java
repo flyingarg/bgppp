@@ -19,7 +19,6 @@ public class TestBGPSendPacket extends TestCase {
 			int temp = 255;
 			marker[i] = (byte)temp;
 		}
-		int int_type = 1;
 		Byte[] type	  = new Byte[]{(byte)1};		
 		Byte[] length = new Byte[]{Byte.parseByte("0",10),Byte.parseByte("29",10)};
 

@@ -3,6 +3,7 @@ package com.bgppp.protoprocessor;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.HashMap;
+
 import org.apache.log4j.*;
 
 import com.bgppp.protoprocessor.utils.AddressAndMask;
@@ -16,8 +17,10 @@ import com.bgppp.protoprocessor.utils.AddressAndMask;
  * @param <K>
  * @param <V>
  */
+@SuppressWarnings("serial")
 public class WrappedHash<K, V> extends HashMap<K, V>{
 	public static Logger log = Logger.getLogger(WrappedHash.class.getName());
+	@SuppressWarnings("unused")
 	@Override
 	public V put(K key, V value) {
 		log.info("Put:Key->"+key.toString()+"Value"+value.toString());

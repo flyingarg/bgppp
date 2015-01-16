@@ -1,7 +1,5 @@
 package com.bgppp.protoprocessor;
 
-import java.lang.ProcessBuilder.Redirect;
-
 import junit.framework.TestCase;
 
 public class TestProcessBuilder extends TestCase {

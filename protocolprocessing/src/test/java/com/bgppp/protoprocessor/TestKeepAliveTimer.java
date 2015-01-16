@@ -6,6 +6,9 @@ import java.util.Date;
 
 import org.apache.log4j.Logger;
 
+import com.bgppp.protoprocessor.timers.KeepAliveSender;
+import com.bgppp.protoprocessor.timers.KeepAliveTimer;
+import com.bgppp.protoprocessor.timers.TimerListener;
 import com.bgppp.protoprocessor.utils.TimeOutUtils;
 
 public class TestKeepAliveTimer extends Thread {
@@ -46,8 +49,8 @@ class MockKeepAliveSender extends KeepAliveSender{
 	
 	public void run(){
 		System.out.println("Starting Sender");
-		isRunning = true;
-		while(isRunning){
+		setRunning(true);
+		while(isRunning()){
 			try{
 				KeepAliveSender.sleep(TimeOutUtils.SENDKEEPALIVE);
 				kaTimer.resetCounter();
