@@ -7,7 +7,7 @@ import java.net.SocketTimeoutException;
 
 import org.apache.log4j.Logger;
 
-import com.bgppp.protoprocessor.graphs.TimeOutUtils;
+import com.bgppp.protoprocessor.utils.TimeOutUtils;
 import com.bgppp.protoprocessor.packet.BgpKeepalivePacket;
 import com.bgppp.protoprocessor.packet.BgpOpenPacket;
 

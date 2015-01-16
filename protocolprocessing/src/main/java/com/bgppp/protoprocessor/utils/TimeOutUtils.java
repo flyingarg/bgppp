@@ -1,4 +1,4 @@
-package com.bgppp.protoprocessor.graphs;
+package com.bgppp.protoprocessor.utils;
 
 public class TimeOutUtils {
 

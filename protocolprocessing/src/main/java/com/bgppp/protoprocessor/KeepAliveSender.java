@@ -6,7 +6,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
-import com.bgppp.protoprocessor.graphs.TimeOutUtils;
+import com.bgppp.protoprocessor.utils.TimeOutUtils;
 
 public class KeepAliveSender extends BgpOperations{
 	private static Logger log = Logger.getLogger(KeepAliveSender.class.getName());

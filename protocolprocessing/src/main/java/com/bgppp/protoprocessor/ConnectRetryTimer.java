@@ -3,7 +3,7 @@ package com.bgppp.protoprocessor;
 import java.io.IOException;
 import java.util.Date;
 
-import com.bgppp.protoprocessor.graphs.TimeOutUtils;
+import com.bgppp.protoprocessor.utils.TimeOutUtils;
 import org.apache.log4j.*;
 
 public class ConnectRetryTimer extends Thread{

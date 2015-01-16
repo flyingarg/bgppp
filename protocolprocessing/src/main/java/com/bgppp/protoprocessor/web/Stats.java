@@ -48,8 +48,7 @@ public class Stats{
 						log.info(ProducerConsumerStore.getBgpConsumerByName(link.getPathName().split("-")[0]+"_consumer_" + link.getSourceAddress()).getFsmState());
 						log.info(ProducerConsumerStore.getBgpProducerByName(link.getPathName().split("-")[0]+"_producer_"+link.getDestinationAddress()).getFsmState());
 						FSMState consumerState = ProducerConsumerStore.getBgpConsumerByName(link.getPathName().split("-")[0]+"_consumer_" + link.getSourceAddress()).getFsmState();
-						//boolean producerIsAlive = ProducerConsumerStore.getBgpProducerByName(link.getPathName().split("-")[0]+"_producer_"+link.getDestinationAddress()).getFsmState();
-						//then we check if the link is alive, as dead links would not make great vertices of a graph ;-)
+						//If the consumer of a link id in ESTABLISHED state, then it is treated as the source of a connection between consumer and producer
 						if(!consumerState.equals(FSMState.ESTABLISHED))
 							continue;
 					}

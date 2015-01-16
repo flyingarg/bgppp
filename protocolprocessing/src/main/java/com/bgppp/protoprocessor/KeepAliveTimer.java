@@ -4,7 +4,7 @@ import java.util.*;
 
 import org.apache.log4j.Logger;
 
-import com.bgppp.protoprocessor.graphs.TimeOutUtils;
+import com.bgppp.protoprocessor.utils.TimeOutUtils;
 
 public class KeepAliveTimer extends Thread{
 	public static Logger log = Logger.getLogger(KeepAliveTimer.class.getName());
