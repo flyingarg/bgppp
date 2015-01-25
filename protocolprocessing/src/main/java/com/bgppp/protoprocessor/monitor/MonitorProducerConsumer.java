@@ -68,36 +68,38 @@ public class MonitorProducerConsumer extends Thread{
 			}
 			if(ProducerConsumerStore.hasNewUpdates()){
 				producerStatsList = new ArrayList<ProducerStats>();
-				for(String key : ProducerConsumerStore.getBgpProducersMap().keySet()){
-					ProducerStats proStat = new ProducerStats();
-					proStat.name = ProducerConsumerStore.getBgpProducersMap().get(key).getName();
-					proStat.alive = ProducerConsumerStore.getBgpProducersMap().get(key).isAlive();
-					proStat.running = ProducerConsumerStore.getBgpProducersMap().get(key).isRunning();
-					
-					/*proStat.open = ProducerConsumerStore.getBgpProducer().get(key).getBgpConfig().
-					proStat.nuOfOpenRcvd = ProducerConsumerStore.getBgpProducer().get(key).getBgpConfig().
-					proStat.nuOfKASentRcvd = ProducerConsumerStore.getBgpProducer().get(key).getBgpConfig().
-					proStat.nuOfUpdateRcvd = ProducerConsumerStore.getBgpProducer().get(key).getBgpConfig().
-					proStat.nuOfNotificationsRcvd = ProducerConsumerStore.getBgpProducer().get(key).getBgpConfig().*/
-					
-					producerStatsList.add(proStat);
-					log.info("Name: " + proStat.name + "|Alive: " + proStat.alive + "|Running: " + proStat.running + "|");
-				}
-				consumerStatsList = new ArrayList<ConsumerStats>();
-				for(String key : ProducerConsumerStore.getBgpConsumersMap().keySet()){
-					for(String k : ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().keySet()){
-						ConsumerStats conStat = new ConsumerStats();
-						conStat.name = k;
-						conStat.nuOfKASentRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountKA();
-						conStat.nuOfOpenRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountOpen();
-						conStat.nuOfUpdateRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountUpdate();
-						conStat.nuOfNotificationsRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountNotification();
-						conStat.alive = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).isAlive();
-						conStat.running = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).isRunning();
-						conStat.nuOfMalformedRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountMalformed();
-						consumerStatsList.add(conStat);
-						log.info("|Name: " + conStat.name + "|Alive: " + conStat.alive + "|Running: " + conStat.running + "|MalformedCount: " + conStat.nuOfMalformedRcvd);
-						log.info("|KACount: " + conStat.nuOfKASentRcvd + "|OpenCount: " + conStat.nuOfOpenRcvd + "|UpdateCount: " + conStat.nuOfUpdateRcvd + "|NotificationCount: " + conStat.nuOfNotificationsRcvd +"|");
+				for(String configName : ProducerConsumerStore.getBgpConfigMap().keySet()){
+					for(String key : ProducerConsumerStore.getBgpConfigByName(configName).getProducers().keySet()){
+						ProducerStats proStat = new ProducerStats();
+						proStat.name = ProducerConsumerStore.getBgpConfigByName(configName).getProducers().get(key).getName();
+						proStat.alive = ProducerConsumerStore.getBgpConfigByName(configName).getProducers().get(key).isAlive();
+						proStat.running = ProducerConsumerStore.getBgpConfigByName(configName).getProducers().get(key).isRunning();
+						
+						/*proStat.open = ProducerConsumerStore.getBgpProducer().get(key).getBgpConfig().
+						proStat.nuOfOpenRcvd = ProducerConsumerStore.getBgpProducer().get(key).getBgpConfig().
+						proStat.nuOfKASentRcvd = ProducerConsumerStore.getBgpProducer().get(key).getBgpConfig().
+						proStat.nuOfUpdateRcvd = ProducerConsumerStore.getBgpProducer().get(key).getBgpConfig().
+						proStat.nuOfNotificationsRcvd = ProducerConsumerStore.getBgpProducer().get(key).getBgpConfig().*/
+						
+						producerStatsList.add(proStat);
+						log.info("Name: " + proStat.name + "|Alive: " + proStat.alive + "|Running: " + proStat.running + "|");
+					}
+					consumerStatsList = new ArrayList<ConsumerStats>();
+					for(String key : ProducerConsumerStore.getBgpConfigMap().keySet()){
+						for(String k : ProducerConsumerStore.getBgpConfigByName(configName).getConsumers().keySet()){
+							ConsumerStats conStat = new ConsumerStats();
+							conStat.name = k;
+							conStat.nuOfKASentRcvd = ProducerConsumerStore.getBgpConfigByName(configName).getConsumers().get(key).getConnsFromPeers().get(k).getCountKA();
+							conStat.nuOfOpenRcvd = ProducerConsumerStore.getBgpConfigByName(configName).getConsumers().get(key).getConnsFromPeers().get(k).getCountOpen();
+							conStat.nuOfUpdateRcvd = ProducerConsumerStore.getBgpConfigByName(configName).getConsumers().get(key).getConnsFromPeers().get(k).getCountUpdate();
+							conStat.nuOfNotificationsRcvd = ProducerConsumerStore.getBgpConfigByName(configName).getConsumers().get(key).getConnsFromPeers().get(k).getCountNotification();
+							conStat.alive = ProducerConsumerStore.getBgpConfigByName(configName).getConsumers().get(key).getConnsFromPeers().get(k).isAlive();
+							conStat.running = ProducerConsumerStore.getBgpConfigByName(configName).getConsumers().get(key).getConnsFromPeers().get(k).isRunning();
+							conStat.nuOfMalformedRcvd = ProducerConsumerStore.getBgpConfigByName(configName).getConsumers().get(key).getConnsFromPeers().get(k).getCountMalformed();
+							consumerStatsList.add(conStat);
+							log.info("|Name: " + conStat.name + "|Alive: " + conStat.alive + "|Running: " + conStat.running + "|MalformedCount: " + conStat.nuOfMalformedRcvd);
+							log.info("|KACount: " + conStat.nuOfKASentRcvd + "|OpenCount: " + conStat.nuOfOpenRcvd + "|UpdateCount: " + conStat.nuOfUpdateRcvd + "|NotificationCount: " + conStat.nuOfNotificationsRcvd +"|");
+						}
 					}
 				}
 			}

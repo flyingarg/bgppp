@@ -28,7 +28,7 @@ public class GraphUtils {
 	
 
 	/**
-	 *Does DFS(Depth First Search) on a graph. the graph is stored in NodeStore. 
+	 *Does DFS(Depth First Search) on a graph. the graph is stored in ProducerConsumerStore. 
 	 * @param nodesInPath : Nodes traversed are stored in stack variable
 	 * @param currentNode : Each node contains path information, so as long as one node is provided, paths can be traversed.
 	 */

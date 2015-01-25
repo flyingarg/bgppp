@@ -19,14 +19,14 @@ public class TestStartBgpBg extends TestCase {
 		StartBgpBg.routers = new WrappedHash<String, BgpConfig>();
 		config1 = new BgpConfig("config1");
 		config1.setRouterName("router1");
-		config1.addAddress(new AddressAndMask("if1", "10.100.1.1", "255.0.0.0"));
-		config1.addAddress(new AddressAndMask("if2", "10.101.1.1", "255.0.0.0"));
+		config1.addAddressAndMask(new AddressAndMask("if1", "10.100.1.1", "255.0.0.0"));
+		config1.addAddressAndMask(new AddressAndMask("if2", "10.101.1.1", "255.0.0.0"));
 		StartBgpBg.routers.put(config1.getRouterName(), config1);
 
 		config2 = new BgpConfig("config2");
 		config2.setRouterName("router2");
-		config2.addAddress(new AddressAndMask("if1", "10.102.1.1", "255.0.0.0"));
-		config2.addAddress(new AddressAndMask("if2", "10.103.1.1", "255.0.0.0"));
+		config2.addAddressAndMask(new AddressAndMask("if1", "10.102.1.1", "255.0.0.0"));
+		config2.addAddressAndMask(new AddressAndMask("if2", "10.103.1.1", "255.0.0.0"));
 		StartBgpBg.routers.put(config2.getRouterName(), config2);
 
 		super.setUp();
@@ -37,8 +37,8 @@ public class TestStartBgpBg extends TestCase {
 		testConfigs.put(config1.getRouterName(), config1);
 		config3 = new BgpConfig("config3");
 		config3.setRouterName("router3");
-		config3.addAddress(new AddressAndMask("if1", "10.104.1.1", "255.0.0.0"));
-		config3.addAddress(new AddressAndMask("if2", "10.105.1.1", "255.0.0.0"));
+		config3.addAddressAndMask(new AddressAndMask("if1", "10.104.1.1", "255.0.0.0"));
+		config3.addAddressAndMask(new AddressAndMask("if2", "10.105.1.1", "255.0.0.0"));
 		testConfigs.put(config3.getRouterName(), config3);
 
 		HashMap<String, BgpConfig[]> response = ConfigHelper

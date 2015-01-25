@@ -1,11 +1,11 @@
 package com.bgppp.protoprocessor.graphs;
 
-import com.bgppp.protoprocessor.NodeStore;
+import com.bgppp.protoprocessor.ProducerConsumerStore;
 
 public class ThreePaths {
 
-	NodeStore pathFromPeers = new NodeStore();//Calculated, no user access
-	NodeStore pathToPeers = new NodeStore();//based on nodes removed/added to the pathFromAdmins
-	NodeStore pathFromAdmins = new NodeStore();//Admins have access to modify these
+	ProducerConsumerStore pathFromPeers = new ProducerConsumerStore();//Calculated, no user access
+	ProducerConsumerStore pathToPeers = new ProducerConsumerStore();//based on nodes removed/added to the pathFromAdmins
+	ProducerConsumerStore pathFromAdmins = new ProducerConsumerStore();//Admins have access to modify these
 	
 }

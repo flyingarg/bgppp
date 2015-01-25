@@ -9,14 +9,11 @@ import org.apache.log4j.*;
 public class NodeStore {
 
 	public static Logger log = Logger.getLogger(NodeStore.class.getName());
+	
 	private static HashMap<String,GraphNode> hashStore = new HashMap<String, GraphNode>();
 	private static HashMap<String, GraphPath> pathStore = new HashMap<String, GraphPath>();
-	
 	public static HashMap<String, GraphNode> getHashStore() {
 		return hashStore;
-	}
-	public static void setHashStore(HashMap<String, GraphNode> hashStore) {
-		NodeStore.hashStore = hashStore;
 	}
 	public static void addNode(GraphNode node){
 		NodeStore.hashStore.put(node.getNodeName(), node);
@@ -28,12 +25,8 @@ public class NodeStore {
 		return NodeStore.hashStore.get(name);
 	}
 
-	
 	public static HashMap<String, GraphPath> getPathStore() {
 		return pathStore;
-	}
-	public static void setPathStore(HashMap<String, GraphPath> pathStore) {
-		NodeStore.pathStore = pathStore;
 	}
 	public static void addPath(GraphPath path){
 		NodeStore.pathStore.put(path.getPathName(), path);

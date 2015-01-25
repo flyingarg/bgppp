@@ -60,7 +60,16 @@ public class BgpOperations extends Thread{
 		} catch (IOException e) {
 			log.error("IOException " + e.getMessage());
 		}
-	}   
+	}
+
+	protected void toSendUpdate(DataInputStream inStream, DataOutputStream outStream, Logger log){
+		log.info("Sending Update message");
+	}
+
+	protected void toSendNotification(DataInputStream inStream, DataOutputStream outStream, Logger log){
+		log.info("Sending Update message");
+	}
+
 	public int getInt(byte[] bite){
 		String strInt = "";
 		for(int j=bite.length-1;j>-1;j--){

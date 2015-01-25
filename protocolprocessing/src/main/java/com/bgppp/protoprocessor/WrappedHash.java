@@ -49,8 +49,7 @@ public class WrappedHash<K, V> extends HashMap<K, V>{
 				}
 			}
 			//Start discovery process
-			BgpThread thread = new BgpThread(bgpConfig);
-			thread.start();
+			bgpConfig.execute();
 		}
 		return super.put(key, value);
 	}
@@ -76,6 +75,7 @@ public class WrappedHash<K, V> extends HashMap<K, V>{
 					log.error("Error creating interface " + addresses.get(addressName).getAddress() + "/" + addresses.get(addressName).getMask() + ", Exit status: " + exitStatus);
 				}
 			}
+			bgpConfig.destroy();
 			//Start discovery process
 		}
 		return super.remove(key);

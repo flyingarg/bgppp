@@ -9,8 +9,8 @@ import javax.ws.rs.core.MediaType;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
+import com.bgppp.protoprocessor.BgpConsumer;
 import com.bgppp.protoprocessor.FSMState;
-import com.bgppp.protoprocessor.NodeStore;
 import com.bgppp.protoprocessor.ProducerConsumerStore;
 import com.bgppp.protoprocessor.Link;
 
@@ -28,35 +28,38 @@ public class Stats{
 			JSONObject jsonobject;
 			JSONArray nodeArray = new JSONArray();
 			JSONArray verticesArray = new JSONArray();
-			for(String key : NodeStore.getHashStore().keySet()){
-				if(NodeStore.getHashStore().get(key).getNodeName().contains(routerName) || routerName.equals("all")){
+			for(String key : ProducerConsumerStore.getHashStore().keySet()){
+				if(ProducerConsumerStore.getHashStore().get(key).getNodeName().contains(routerName) || routerName.equals("all")){
 					jsonobject = new JSONObject();
-					jsonobject.put("id",NodeStore.getHashStore().get(key).getId());
-					jsonobject.put("name",NodeStore.getHashStore().get(key).getNodeName());
+					jsonobject.put("id",ProducerConsumerStore.getHashStore().get(key).getId());
+					jsonobject.put("name",ProducerConsumerStore.getHashStore().get(key).getNodeName());
 					nodeArray.put(jsonobject);
 				}
 			}
-			for(String key : NodeStore.getPathStore().keySet()){
-				if((NodeStore.getPathStore().get(key).getPathName()).contains(routerName) || routerName.equals("all")){
+
+			for(String key : ProducerConsumerStore.getPathStore().keySet()){
+				log.info("path store key"+key);
+			}
+			for(String key : ProducerConsumerStore.getHashStore().keySet()){
+				log.info("node store key"+key);
+			}
+
+			for(String key : ProducerConsumerStore.getPathStore().keySet()){
+				if((ProducerConsumerStore.getPathStore().get(key).getPathName()).contains(routerName) || routerName.equals("all")){
 					//We check if these paths are infact instance of a link, which it should be and hence it makes it safe to typecast
-					if(NodeStore.getPathStore().get(key) instanceof Link){
-						Link link = null;
-						//typecasting
-						link = (Link)NodeStore.getPathStore().get(key);
-						log.info(ProducerConsumerStore.getBgpProducersMap().keySet());
-						log.info(link.getPathName().split("-")[0]+"_producer_"+link.getSourceAddress());
-						log.info(ProducerConsumerStore.getBgpConsumerByName(link.getPathName().split("-")[0]+"_consumer_" + link.getSourceAddress()).getFsmState());
-						log.info(ProducerConsumerStore.getBgpProducerByName(link.getPathName().split("-")[0]+"_producer_"+link.getDestinationAddress()).getFsmState());
-						FSMState consumerState = ProducerConsumerStore.getBgpConsumerByName(link.getPathName().split("-")[0]+"_consumer_" + link.getSourceAddress()).getFsmState();
-						//If the consumer of a link id in ESTABLISHED state, then it is treated as the source of a connection between consumer and producer
-						if(!consumerState.equals(FSMState.ESTABLISHED))
+					if(ProducerConsumerStore.getPathStore().get(key) instanceof Link){
+						Link link = (Link)ProducerConsumerStore.getPathStore().get(key);
+						//We then get the consumer from the ProducerConsumerStore using the link and check if the consumer is in ESTABLISHED state. If yes, it means
+						//that that particular link between two routers is ACTIVE and processing BGP messages.
+						BgpConsumer consumer = ProducerConsumerStore.getConsumerOfLink(link);
+						if(!consumer.getFsmState().equals(FSMState.ESTABLISHED))
 							continue;
 					}
 					jsonobject = new JSONObject();
-					jsonobject.put("id",NodeStore.getPathStore().get(key).getId());
-					jsonobject.put("source",NodeStore.getPathStore().get(key).getSourceId());
-					jsonobject.put("target",NodeStore.getPathStore().get(key).getDestinationId());
-					jsonobject.put("name",NodeStore.getPathStore().get(key).getPathName());
+					jsonobject.put("id",ProducerConsumerStore.getPathStore().get(key).getId());
+					jsonobject.put("source",ProducerConsumerStore.getPathStore().get(key).getSourceId());
+					jsonobject.put("target",ProducerConsumerStore.getPathStore().get(key).getDestinationId());
+					jsonobject.put("name",ProducerConsumerStore.getPathStore().get(key).getPathName());
 					verticesArray.put(jsonobject);
 				}
 			}

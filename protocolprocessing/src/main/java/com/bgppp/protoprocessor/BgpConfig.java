@@ -7,28 +7,23 @@ import java.util.List;
 import org.apache.log4j.*;
 import com.bgppp.protoprocessor.graphs.GraphNode;
 import com.bgppp.protoprocessor.utils.AddressAndMask;
+import com.bgppp.protoprocessor.remote.SshServerDaemon;
 
 public class BgpConfig extends GraphNode{
-
 	public static Logger log = Logger.getLogger(BgpConfig.class.getName());
+	private HashMap<String, BgpConsumer> consumers = new HashMap<String, BgpConsumer>();
+	private HashMap<String, BgpProducer> producers = new HashMap<String, BgpProducer>();
+	private String routerName;
+	private List<Link> links = new ArrayList<Link>();
+	private HashMap<String, AddressAndMask> addressAndMasks = new HashMap<String, AddressAndMask>();
 	public BgpConfig(String name) {
 		super(name);
 		this.routerName = name;
 	}
 
-	// Basic router identifiers.
-	private String routerName;
-
-	// Array of InetAddresses available.
-	private HashMap<String, AddressAndMask> addressAndMasks = new HashMap<String, AddressAndMask>();
-
-	// Connection details - List of one-to-one outgoing connections.
-	private List<Link> links = new ArrayList<Link>();
-
 	public String getRouterName() {
 		return routerName;
 	}
-
 	public void setRouterName(String routerName) {
 		super.setNodeName(routerName);
 		this.routerName = routerName;
@@ -37,34 +32,39 @@ public class BgpConfig extends GraphNode{
 	public HashMap<String, AddressAndMask> getAddressAndMasks() {
 		return addressAndMasks;
 	}
-
-	public void setAddressAndMasks(HashMap<String, AddressAndMask> addressAndMask) {
-		this.addressAndMasks = addressAndMask;
-	}
-
-	public boolean addAddress(AddressAndMask newAddressAndMask) {
-/*		if (this.addressAndMasks != null && this.addressAndMasks.size() != 0) {
-			for (AddressAndMask address : this.addressAndMasks) {
-				if (address.equals(newAddressAndMask)) {
-					log.info("Address not added, Address "
-							+ newAddressAndMask.toString() + " already exist.");
-					return false;
-				}
-			}
-
-		}*/
+	public boolean addAddressAndMask(AddressAndMask newAddressAndMask) {
 		addressAndMasks.put(newAddressAndMask.getName(), newAddressAndMask);
 		return true;
+	}
+	public boolean removeAddressAndMask(AddressAndMask newAddressAndMask) {
+		addressAndMasks.remove(newAddressAndMask.getName());
+		return true;
+	}
+	
+	public HashMap<String, BgpConsumer> getConsumers() {
+		return consumers;
+	}
+	public void addConsumer(BgpConsumer consumer) {
+		this.consumers.put(consumer.getName(), consumer);
+	}
+	public void removeConsumer(String name) {
+		this.consumers.remove(name);
+	}
+
+
+	public HashMap<String, BgpProducer> getProducers() {
+		return producers;
+	}
+	public void addProducer(BgpProducer producer) {
+		this.producers.put(producer.getName(), producer);
+	}
+	public void removeProducer(String name) {
+		this.producers.remove(name);
 	}
 
 	public List<Link> getLinks() {
 		return links;
 	}
-
-	public void setLinks(List<Link> links) {
-		this.links = links;
-	}
-
 	public boolean addLink(String localAddressName, InetAddress remoteAddress) {
 		if (addressAndMasks.get(localAddressName) == null) {
 			log.info("Link not created, Local Address " + localAddressName + " Does not exist.");
@@ -73,22 +73,14 @@ public class BgpConfig extends GraphNode{
 			for (Link link : this.links) {
 				if (link.getSourceAddressName().equals(localAddressName)) {
 					if (link.getDestinationAddress().equals(remoteAddress)) {
-						log.info("Link not created, Local Address and Remote address pair "
-										+ localAddressName
-										+ "-"
-										+ remoteAddress.toString()
-										+ " already exists.");
+						log.info("Link not created, Local Address and Remote address pair "	+ localAddressName	+ "-"+ remoteAddress.toString()	+ " already exists.");
 						return false;
 					}
 				}
 			}
-
 		}
 		InetAddress source = getAddressAndMaskByName(localAddressName).getAddress();
-		Link link = new Link(super.getNodeName()+"-"+localAddressName+"-"+remoteAddress.toString().substring(1)
-				,""+(links.size()+1)
-				,source
-				,remoteAddress);
+		Link link = new Link(super.getNodeName()+"-"+localAddressName+"-"+remoteAddress.toString().substring(1),""+(links.size()+1)	,source	,remoteAddress);
 		link.setSourceAddressName(localAddressName);
 		this.links.add(link);
 		log.info("Added Link" + link);
@@ -106,5 +98,49 @@ public class BgpConfig extends GraphNode{
 		response += ",address:"+this.addressAndMasks;
 		response += ",link:"+this.links;
 		return response;
+	}
+
+	public void execute() {
+		ProducerConsumerStore.addNode(this);//Adding Node to ProducerConsumerStore
+		//Start the threads
+		for (Link link : this.getLinks()) {
+			ProducerConsumerStore.addPath(link);//Adding Link to ProducerConsumerStore
+			BgpConsumer consumer = new BgpConsumer(this, link);
+			addConsumer(consumer);//Storing consumer to config, so that config becomes single point where all router related information is.
+			consumer.start();
+			while(!consumer.isRunning()){
+				log.info("Consumer still not running, sleep some more");
+				try {
+					Thread.currentThread().sleep(2000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			BgpProducer producer = new BgpProducer(this, link);
+			addProducer(producer);//Storing producer to config, so that config becomes single point where all router related information is.
+			producer.start();
+			consumer.setBgpProducer(producer);
+		}
+		//Start one ssh server on each router!!
+		ProducerConsumerStore.addBgpConfig(this.routerName, this);
+		SshServerDaemon server = new SshServerDaemon(this);
+		server.start();
+	}
+	/**
+	 * Clean closure of all producers and consumers so that the bgpConfig and all ensuing threads can be cleanly garbage collected.
+	 */
+	public void destroy(){
+		ProducerConsumerStore.removeNode(this);
+		for (Link link : this.getLinks()) {
+			ProducerConsumerStore.removePath(link);
+		}
+		for(String consumerName : getConsumers().keySet()){
+			BgpConsumer consumer = getConsumers().get(consumerName);
+			consumer.setRunning(false);
+		}
+		for(String producerName : getProducers().keySet()){
+			BgpProducer producer = getProducers().get(producerName);
+			producer.timeUp();
+		}
 	}
 }

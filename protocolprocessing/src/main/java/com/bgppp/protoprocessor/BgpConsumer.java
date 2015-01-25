@@ -20,12 +20,25 @@ public class BgpConsumer extends Thread {
 	private BgpProducer bgpProducer = null;
 	public HashMap<String, BgpConsumerThread> connsFromPeers = new HashMap<String, BgpConsumerThread>();
 	private FSMState fsmState = null;
+	private ServerSocket serverSocket = null;
 	public boolean isRunning() {
 		return isRunning;
 	}
 
 	public void setRunning(boolean isRunning) {
-		this.isRunning = isRunning;
+		if(isRunning == false){
+			for(String consumerThreadName : connsFromPeers.keySet()){
+				connsFromPeers.get(consumerThreadName).timeUp();
+				this.isRunning = false;
+				try{
+					this.serverSocket.close();
+				}catch(Exception e){
+					log.error("Error closing socket : " + e.getMessage() );
+				}
+			}
+		}else{
+			this.isRunning = isRunning;
+		}
 	}
 
 	public BgpConsumer(BgpConfig bgpConfig, Link link) {
@@ -38,7 +51,6 @@ public class BgpConsumer extends Thread {
 	public void run() {
 		log.info("Starting Consumer : " + bgpConfig.getRouterName() + ":" +link);
 		setFsmState(FSMState.IDLE);
-		ServerSocket serverSocket = null;
 		try {
 			InetAddress address = bgpConfig.getAddressAndMaskByName(link.getSourceAddressName()).getAddress();
 			if (address == null) {

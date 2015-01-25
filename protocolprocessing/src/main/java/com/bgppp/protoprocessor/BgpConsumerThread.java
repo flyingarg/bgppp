@@ -111,9 +111,11 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 					countOpen++;
 					break;
 			case 2: log.info("Update Packet");
+					toSendUpdate(inputStream, outputStream, log);
 					countUpdate++;
 					break;
 			case 3: log.info("Notificaiton Packet");
+					toSendNotification(inputStream, outputStream, log);
 					countNotification++;
 					break;
 			default:log.info("Malformed Packet");

@@ -12,6 +12,7 @@ import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
 import com.bgppp.protoprocessor.ProducerConsumerStore;
 import com.bgppp.protoprocessor.BgpConfig;
+import com.bgppp.protoprocessor.BgpConsumer;
 import org.apache.log4j.*;
 /*
  * Copied from <a href="https://svn.apache.org/repos/asf/mina/sshd/trunk/sshd-core/src/test/java/org/apache/sshd/util/EchoShellFactory.java">Apache MINA SSHD Project</a>
@@ -112,18 +113,19 @@ public class EchoShellFactory implements Factory<Command> {
 
 		public String processInput(String s){
 			String response = "";
+			//System.out.println("No Of Consumers : " + ProducerConsumerStore.getBgpConsumersMap().size());
+			//System.out.println("No Of Producers : " + ProducerConsumerStore.getBgpProducersMap().size());
+			System.out.println("No of Configurs : " + ProducerConsumerStore.getBgpConfigMap().size());
 			if(ProducerConsumerStore.hasNewUpdates()){
-				for(String key : ProducerConsumerStore.getBgpProducersMap().keySet()){
-					if(!key.contains(config.getRouterName()))
-						continue;
-					String name = ProducerConsumerStore.getBgpProducersMap().get(key).getName();
-					boolean alive = ProducerConsumerStore.getBgpProducersMap().get(key).isAlive();
-					boolean running = ProducerConsumerStore.getBgpProducersMap().get(key).isRunning();
-					int nuOfOpenRcvd = ProducerConsumerStore.getBgpProducersMap().get(key).getCountOpen();
-					int nuOfKASentRcvd = ProducerConsumerStore.getBgpProducersMap().get(key).getCountKA();
-					int nuOfUpdateRcvd = ProducerConsumerStore.getBgpProducersMap().get(key).getCountUpdate();
-					int nuOfNotificationsRcvd = ProducerConsumerStore.getBgpProducersMap().get(key).getCountNotification();
-					int nuOfMalformedRcvd = ProducerConsumerStore.getBgpProducersMap().get(key).getCountMalformed();
+				for(String key : ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().keySet()){
+					String name = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).getName();
+					boolean alive = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).isAlive();
+					boolean running = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).isRunning();
+					int nuOfOpenRcvd = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).getCountOpen();
+					int nuOfKASentRcvd = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).getCountKA();
+					int nuOfUpdateRcvd = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).getCountUpdate();
+					int nuOfNotificationsRcvd = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).getCountNotification();
+					int nuOfMalformedRcvd = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).getCountMalformed();
 					response += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
 					response += "PRODUCER-"+name+"\n";
 					response += "-------------------------------------------------------------------\n";
@@ -132,18 +134,17 @@ public class EchoShellFactory implements Factory<Command> {
 					response += "-------------------------------------------------------------------\n";
 					response += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n\n";
 				}
-				for(String key : ProducerConsumerStore.getBgpConsumersMap().keySet()){
-					if(!key.contains(config.getRouterName()))
-						continue;
-					for(String k : ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().keySet()){
+				for(String key : ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getConsumers().keySet()){
+					BgpConsumer bgpConsumer = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getConsumers().get(key);
+					for(String k : bgpConsumer.getConnsFromPeers().keySet()){
 						String name = k;
-						boolean alive = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).isAlive();
-						boolean running = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).isRunning();
-						int nuOfKASentRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountKA();
-						int nuOfOpenRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountOpen();
-						int nuOfUpdateRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountUpdate();
-						int nuOfNotificationsRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountNotification();
-						int nuOfMalformedRcvd = ProducerConsumerStore.getBgpConsumersMap().get(key).getConnsFromPeers().get(k).getCountMalformed();
+						boolean alive = bgpConsumer.getConnsFromPeers().get(k).isAlive();
+						boolean running = bgpConsumer.getConnsFromPeers().get(k).isRunning();
+						int nuOfKASentRcvd = bgpConsumer.getConnsFromPeers().get(k).getCountKA();
+						int nuOfOpenRcvd = bgpConsumer.getConnsFromPeers().get(k).getCountOpen();
+						int nuOfUpdateRcvd = bgpConsumer.getConnsFromPeers().get(k).getCountUpdate();
+						int nuOfNotificationsRcvd = bgpConsumer.getConnsFromPeers().get(k).getCountNotification();
+						int nuOfMalformedRcvd = bgpConsumer.getConnsFromPeers().get(k).getCountMalformed();
 						response += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
 						response += "CONSUMER-"+name+"\n";
 						response += "-------------------------------------------------------------------\n";

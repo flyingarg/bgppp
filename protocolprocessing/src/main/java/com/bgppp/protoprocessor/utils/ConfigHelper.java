@@ -33,7 +33,7 @@ public class ConfigHelper {
 					}
 				} else if (parameters[i].trim().matches("[0-9a-zA-Z]*[/][0-9]*.[0-9]*.[0-9]*.[0-9]*[/][0-9]*.[0-9]*.[0-9]*.[0-9]*")) {//Ip Address
 					try {
-						config.addAddress(new AddressAndMask(parameters[i].trim().split("\\/")[0], parameters[i].trim().split("\\/")[1],parameters[i].trim().split("\\/")[2]));
+						config.addAddressAndMask(new AddressAndMask(parameters[i].trim().split("\\/")[0], parameters[i].trim().split("\\/")[1],parameters[i].trim().split("\\/")[2]));
 					} catch (Exception exception) {
 						log.error(exception.getMessage());
 					}
