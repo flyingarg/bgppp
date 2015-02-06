@@ -65,16 +65,16 @@ public class BgpConfig extends GraphNode{
 	public List<Link> getLinks() {
 		return links;
 	}
-	public boolean addLink(String localAddressName, InetAddress remoteAddress) {
+	public Link addLink(String localAddressName, InetAddress remoteAddress) {
 		if (addressAndMasks.get(localAddressName) == null) {
 			log.info("Link not created, Local Address " + localAddressName + " Does not exist.");
-			return false;
+			return null;
 		} else {
 			for (Link link : this.links) {
 				if (link.getSourceAddressName().equals(localAddressName)) {
 					if (link.getDestinationAddress().equals(remoteAddress)) {
 						log.info("Link not created, Local Address and Remote address pair "	+ localAddressName	+ "-"+ remoteAddress.toString()	+ " already exists.");
-						return false;
+						return null;
 					}
 				}
 			}
@@ -84,7 +84,7 @@ public class BgpConfig extends GraphNode{
 		link.setSourceAddressName(localAddressName);
 		this.links.add(link);
 		log.info("Added Link" + link);
-		return true;
+		return link;
 	}
 	
 	public AddressAndMask getAddressAndMaskByName(String name){
@@ -104,29 +104,34 @@ public class BgpConfig extends GraphNode{
 		ProducerConsumerStore.addNode(this);//Adding Node to ProducerConsumerStore
 		//Start the threads
 		for (Link link : this.getLinks()) {
-			ProducerConsumerStore.addPath(link);//Adding Link to ProducerConsumerStore
-			BgpConsumer consumer = new BgpConsumer(this, link);
-			addConsumer(consumer);//Storing consumer to config, so that config becomes single point where all router related information is.
-			consumer.start();
-			while(!consumer.isRunning()){
-				log.info("Consumer still not running, sleep some more");
-				try {
-					Thread.currentThread().sleep(2000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-			BgpProducer producer = new BgpProducer(this, link);
-			addProducer(producer);//Storing producer to config, so that config becomes single point where all router related information is.
-			producer.start();
-			consumer.setBgpProducer(producer);
+			spwanProducersConsumers(link);
 		}
 		//Start one ssh server on each router!!
 		ProducerConsumerStore.addBgpConfig(this.routerName, this);
 		SshServerDaemon server = new SshServerDaemon(this);
 		server.start();
 	}
-	/**
+
+	public void spwanProducersConsumers(Link link){
+		//Start the threads
+		ProducerConsumerStore.addPath(link);//Adding Link to ProducerConsumerStore
+		BgpConsumer consumer = new BgpConsumer(this, link);
+		addConsumer(consumer);//Storing consumer to config, so that config becomes single point where all router related information is.
+		consumer.start();
+		while(!consumer.isRunning()){
+			log.info("Consumer still not running, sleep some more");
+			try {
+				Thread.currentThread().sleep(2000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		BgpProducer producer = new BgpProducer(this, link);
+		addProducer(producer);//Storing producer to config, so that config becomes single point where all router related information is.
+		producer.start();
+		consumer.setBgpProducer(producer);
+	}
+/**
 	 * Clean closure of all producers and consumers so that the bgpConfig and all ensuing threads can be cleanly garbage collected.
 	 */
 	public void destroy(){

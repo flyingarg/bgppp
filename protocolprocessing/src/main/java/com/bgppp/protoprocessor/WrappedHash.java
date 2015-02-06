@@ -20,7 +20,6 @@ import com.bgppp.protoprocessor.utils.AddressAndMask;
 @SuppressWarnings("serial")
 public class WrappedHash<K, V> extends HashMap<K, V>{
 	public static Logger log = Logger.getLogger(WrappedHash.class.getName());
-	@SuppressWarnings("unused")
 	@Override
 	public V put(K key, V value) {
 		log.info("Put:Key->"+key.toString()+"Value"+value.toString());
@@ -34,19 +33,9 @@ public class WrappedHash<K, V> extends HashMap<K, V>{
 		if(value instanceof BgpConfig){
 			BgpConfig bgpConfig = (BgpConfig) value;
 			HashMap<String, AddressAndMask> addresses = bgpConfig.getAddressAndMasks();
-			String exitStatus = "";
 			//Creating interfaces
 			for(String addressName : addresses.keySet()){
-				log.info("ifconfig " + "eth0:" + bgpConfig.getRouterName() + addressName + " " + addresses.get(addressName).getAddress().toString().substring(1) + " netmask "+ addresses.get(addressName).getMask());
-				try{
-					ProcessBuilder processBuilder = new ProcessBuilder("ifconfig", "eth0:"+bgpConfig.getRouterName()+addressName, addresses.get(addressName).getAddress().toString().substring(1) ,"netmask" ,addresses.get(addressName).getMask());
-					processBuilder.redirectOutput(Redirect.INHERIT);
-					processBuilder.redirectErrorStream(true);
-					Process process = processBuilder.start();
-					//exitStatus = ""+process.exitValue();
-				}catch(IOException exception){
-					log.error("Error creating interface " + addresses.get(addressName).getAddress() + "/" + addresses.get(addressName).getMask() + ", Exit status: " + exitStatus);
-				}
+				addIfconfig(bgpConfig, addresses.get(addressName));
 			}
 			//Start discovery process
 			bgpConfig.execute();
@@ -63,21 +52,44 @@ public class WrappedHash<K, V> extends HashMap<K, V>{
 		if(value instanceof BgpConfig){
 			BgpConfig bgpConfig = (BgpConfig) value;
 			HashMap<String, AddressAndMask> addresses = bgpConfig.getAddressAndMasks();
-			String exitStatus = "";
 			//Creating interfaces
 			for(String addressName : addresses.keySet()){
-				log.info("ifconfig " + "eth0:" + bgpConfig.getRouterName() + addresses.get(addressName).getName() + " down");
-				try{
-					ProcessBuilder processBuilder = new ProcessBuilder("ifconfig", "eth0:"+bgpConfig.getRouterName()+addresses.get(addressName).getName(), "down");
-					Process process = processBuilder.start();
-					exitStatus = ""+process.exitValue();
-				}catch(IOException exception){
-					log.error("Error creating interface " + addresses.get(addressName).getAddress() + "/" + addresses.get(addressName).getMask() + ", Exit status: " + exitStatus);
-				}
+				removeIfconfig(bgpConfig, addresses.get(addressName));
 			}
 			bgpConfig.destroy();
 			//Start discovery process
 		}
 		return super.remove(key);
+	}
+
+	@SuppressWarnings("unused")
+	public static synchronized void addIfconfig(BgpConfig bgpConfig, AddressAndMask address){
+		String exitStatus = "";
+		String ifName = bgpConfig.getRouterName() + address.getName();
+		log.info("ifconfig " + "eth0:" + ifName + " " + address.getAddress().toString().replaceFirst("/","") + " netmask "+ address.getMask());
+		try{
+			ProcessBuilder processBuilder = new ProcessBuilder("ifconfig", "eth0:"+ifName, address.getAddress().toString().replaceFirst("/","") ,"netmask" ,address.getMask());
+			processBuilder.redirectOutput(Redirect.INHERIT);
+			processBuilder.redirectErrorStream(true);
+			Process process = processBuilder.start();
+			//exitStatus = ""+process.exitValue();
+		}catch(IOException exception){
+			log.error("Error creating interface " + ifName + "/" + address.toString().substring(1) + ", Exit status: " + exitStatus);
+		}
+	}
+
+	@SuppressWarnings("unused")
+	public static synchronized void removeIfconfig(BgpConfig bgpConfig, AddressAndMask address){
+		String exitStatus = "";
+		String ifName = bgpConfig.getRouterName() + address.getName();
+		//Creating interfaces
+		log.info("ifconfig " + "eth0:" + ifName + " down");
+		try{
+			ProcessBuilder processBuilder = new ProcessBuilder("ifconfig", "eth0:"+ifName, "down");
+			Process process = processBuilder.start();
+			//exitStatus = ""+process.exitValue();
+		}catch(IOException exception){
+			log.error("Error creating interface " + ifName+ " , Exit status: " + exitStatus);
+		}
 	}
 }

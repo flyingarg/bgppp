@@ -10,9 +10,9 @@ import org.apache.sshd.common.Factory;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
-import com.bgppp.protoprocessor.ProducerConsumerStore;
+
 import com.bgppp.protoprocessor.BgpConfig;
-import com.bgppp.protoprocessor.BgpConsumer;
+
 import org.apache.log4j.*;
 /*
  * Copied from <a href="https://svn.apache.org/repos/asf/mina/sshd/trunk/sshd-core/src/test/java/org/apache/sshd/util/EchoShellFactory.java">Apache MINA SSHD Project</a>
@@ -101,7 +101,7 @@ public class EchoShellFactory implements Factory<Command> {
 						return;
 					}
 					s = processInput(s);
-					out.write((s + "\n").getBytes());
+					out.write((s + "\n%").getBytes());
 					out.flush();
 				}
 			} catch (Exception e) {
@@ -112,52 +112,23 @@ public class EchoShellFactory implements Factory<Command> {
 		}
 
 		public String processInput(String s){
-			String response = "";
-			//System.out.println("No Of Consumers : " + ProducerConsumerStore.getBgpConsumersMap().size());
-			//System.out.println("No Of Producers : " + ProducerConsumerStore.getBgpProducersMap().size());
-			System.out.println("No of Configurs : " + ProducerConsumerStore.getBgpConfigMap().size());
-			if(ProducerConsumerStore.hasNewUpdates()){
-				for(String key : ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().keySet()){
-					String name = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).getName();
-					boolean alive = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).isAlive();
-					boolean running = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).isRunning();
-					int nuOfOpenRcvd = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).getCountOpen();
-					int nuOfKASentRcvd = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).getCountKA();
-					int nuOfUpdateRcvd = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).getCountUpdate();
-					int nuOfNotificationsRcvd = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).getCountNotification();
-					int nuOfMalformedRcvd = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).getCountMalformed();
-					response += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
-					response += "PRODUCER-"+name+"\n";
-					response += "-------------------------------------------------------------------\n";
-					response += "|Alive: " + alive + "|Running: " + running + "|MalformedCount: " + nuOfMalformedRcvd ;
-					response += "|KACount: " + nuOfKASentRcvd + "|OpenCount: " + nuOfOpenRcvd + "|UpdateCount: " + nuOfUpdateRcvd + "|NotificationCount: " + nuOfNotificationsRcvd +"|\n"; 
-					response += "-------------------------------------------------------------------\n";
-					response += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n\n";
-				}
-				for(String key : ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getConsumers().keySet()){
-					BgpConsumer bgpConsumer = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getConsumers().get(key);
-					for(String k : bgpConsumer.getConnsFromPeers().keySet()){
-						String name = k;
-						boolean alive = bgpConsumer.getConnsFromPeers().get(k).isAlive();
-						boolean running = bgpConsumer.getConnsFromPeers().get(k).isRunning();
-						int nuOfKASentRcvd = bgpConsumer.getConnsFromPeers().get(k).getCountKA();
-						int nuOfOpenRcvd = bgpConsumer.getConnsFromPeers().get(k).getCountOpen();
-						int nuOfUpdateRcvd = bgpConsumer.getConnsFromPeers().get(k).getCountUpdate();
-						int nuOfNotificationsRcvd = bgpConsumer.getConnsFromPeers().get(k).getCountNotification();
-						int nuOfMalformedRcvd = bgpConsumer.getConnsFromPeers().get(k).getCountMalformed();
-						response += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
-						response += "CONSUMER-"+name+"\n";
-						response += "-------------------------------------------------------------------\n";
-						response += "|Alive: " + alive + "|Running: " + running + "|MalformedCount: " + nuOfMalformedRcvd ;
-						response += "|KACount: " + nuOfKASentRcvd + "|OpenCount: " + nuOfOpenRcvd + "|UpdateCount: " + nuOfUpdateRcvd + "|NotificationCount: " + nuOfNotificationsRcvd +"|\n"; 
-						response += "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n";
-					}
-				}
-			}
+			SSHCommands commands = new SSHCommands();
 			if(s.trim().equals("stats")){
-				return response;
+				return commands.stats(config);
+			}if(s.trim().startsWith("linkadd")){
+				return	commands.linkadd(s, config);
+			}if(s.trim().startsWith("linkls")){
+				return commands.linkls(s,config);
+			}if(s.trim().startsWith("ifadd")){
+				return commands.ifadd(s, config);
+			}if(s.trim().startsWith("ifdel")){
+				return commands.ifdel(s, config);
+			}if(s.trim().startsWith("ifls")){
+				return commands.ifls(s, config);
+			}if(s.trim().equals("help")){
+				return "Available Commands : ifadd, ifls, ifdel, linkadd, linkls, help, stats\n";
 			}else{
-				return s;
+				return "Type help to get available commands\n";
 			}
 		}
 	}
