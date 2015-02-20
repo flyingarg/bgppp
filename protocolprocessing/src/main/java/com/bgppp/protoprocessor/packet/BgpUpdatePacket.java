@@ -53,30 +53,33 @@ public class BgpUpdatePacket extends BgpHeader{
 		}
 
 		//Nlri routes		
-		Byte[] nlri = new Byte[paPrefixes.size()*5];//number of prefixes x (1 byte for prefix length + 4 bytes for prefix)
+		/*Byte[] nlri = new Byte[paPrefixes.size()*5];//number of prefixes x (1 byte for prefix length + 4 bytes for prefix)
 		i = 0;
 		for(String pap : this.paPrefixes){
 			String prefix = pap.split("/")[0].trim();
 			String length = pap.split("/")[1].trim();
 			nlri[i*5] = Byte.parseByte(length,10);
 			int j = 0;
-			for(String sub : prefix.split(".")){
-				nlri[(i*5)+j] = getByteArrayForInteger(Integer.parseInt(sub.trim()),1)[0];
+			for(String sub : prefix.split("\\.")){
+				nlri[(i*5)+j+1] = getByteArrayForInteger(Integer.parseInt(sub.trim()),1)[0];
 				j = j+1;
 			}
 			i = i+1;
-		}   
-		
+		}*/   
+		Byte[] nlri = new Byte[2];
+		nlri[0] = (byte)8;
+		nlri[1] = (byte)2;
 		//Then we fill the attributes
 		int totalLengthAsInt = 0;
 		Byte[] paas = new Byte[0];
 		for(Attribute attribute : paAttributes){
+			System.out.println(attribute.getAsBytes().length);
 			totalLengthAsInt = totalLengthAsInt + attribute.getAsBytes().length;
 			paas = conc(paas,attribute.getAsBytes());
 		}
 
 		Byte[] totalPaLength = new Byte[2];
-		totalPaLength = new Byte[]{getByteArrayForInteger(totalLengthAsInt,2)[0],getByteArrayForInteger(totalLengthAsInt,2)[0]};
+		totalPaLength = new Byte[]{getByteArrayForInteger(totalLengthAsInt,2)[0],getByteArrayForInteger(totalLengthAsInt,2)[1]};
 		packet = conc(conc(conc(wrLength,totalPaLength),paas),nlri);
 		Byte[] finalPacket = addHeader(2, packet);
 		return getbyteFromByte(finalPacket);

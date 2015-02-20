@@ -51,7 +51,7 @@ public class AggregatorAttributeType extends Attribute{
 		byte[] asNo = getByteArrayForInteger(Integer.parseInt(this.lastAs),2);
 		Byte[] as = new Byte[]{asNo[0], asNo[1]};
 
-		String[] identifier = this.lastBgpSpeaker.split(".");
+		String[] identifier = this.lastBgpSpeaker.split("\\.");
 		Byte[] speaker = new Byte[]{
 		getByteArrayForInteger(Integer.parseInt(identifier[0]),1)[0],
 		getByteArrayForInteger(Integer.parseInt(identifier[0]),2)[0],

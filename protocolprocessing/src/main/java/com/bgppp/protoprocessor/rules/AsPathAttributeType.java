@@ -49,17 +49,19 @@ public class AsPathAttributeType extends Attribute{
 
 	@Override
 	public Byte[] getAsBytes() {
-		int len = 6;
+		int len = 2;
 		Byte[] flagsAsBytes = getFlagsAsBytes();
 		Byte[] typeCode = new Byte[]{Byte.parseByte(getType(),10)};
 
 		Byte[] psType = new Byte[]{Byte.parseByte(this.pathSegmentType,10)};//1 octate
 		Byte[] psLength = new Byte[]{Byte.parseByte(this.pathSegmentLength,10)};//1 octate, contains the number of AS(es) each in two octates
 		Byte[] psValue = new Byte[Integer.parseInt(pathSegmentLength)*2];//This is list of AS(es) that the packet has traversed through. 2 bytes are used to specify as AS
-		for(int i=0; i<Integer.parseInt(pathSegmentLength); i=i+2){
+		for(int i=0; i<Integer.parseInt(pathSegmentLength)*2; i=i+2){
 			byte[] temp = getByteArrayForInteger(Integer.parseInt(pathSegmentValue.get(i/2)),2);
 			psValue[i] = temp[0];
 			psValue[i+1] = temp[1];
+/*			psValue[i+2] = temp[2];
+			psValue[i+3] = temp[3];*/
 			len+=2;
 		}
 		Byte[] totalLength = new Byte[]{Byte.parseByte(""+len,10)};

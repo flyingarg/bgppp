@@ -85,6 +85,8 @@ public abstract class Attribute{
 		}
 		//Factorizing and storing bits into a queue
 		int tempNu = nu;
+		if(nu == 1)
+			st.add(Integer.parseInt(""+nu));
 		while(tempNu>1){
 			int a = tempNu%2;
 			st.add(Integer.parseInt(""+a));

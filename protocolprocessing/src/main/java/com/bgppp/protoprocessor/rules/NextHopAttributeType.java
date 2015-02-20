@@ -43,7 +43,7 @@ public class NextHopAttributeType extends Attribute{
 		Byte[] typeCode = new Byte[]{Byte.parseByte(getType(),10)};
 		Byte[] hopLen = new Byte[]{Byte.parseByte("4",10)};
 		Byte[] hop = new Byte[4];
-		String s[] = nextHop.trim().split(".");
+		String s[] = nextHop.trim().split("\\.");
 		hop = new Byte[]{
 			getByteArrayForInteger(Integer.parseInt(s[0]), 1)[0],
 			getByteArrayForInteger(Integer.parseInt(s[1]), 1)[0],
