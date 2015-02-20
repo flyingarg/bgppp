@@ -190,6 +190,7 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 					this.kaTimer.resetCounter();
 					if(!kaSender.isRunning())kaSender.start();
 					setFsmState(FSMState.ESTABLISHED);
+					//TODO : Start Rule handling
 					break;
 			case 1: log.info("Open Packet");
 					this.kaTimer.resetCounter();

@@ -1,9 +1,11 @@
 package com.bgppp.protoprocessor.rules;
 
+import java.util.*;
+
 public class Rule{
 	private RuleType type; //Withdrawn routes or path attributes.
-	private int length;
-	private String prefix;
+	//private int length;
+	private List<String> prefix;
 
 	public RuleType getType() {
 		return type;
@@ -12,17 +14,17 @@ public class Rule{
 		this.type = type;
 	}
 
-	public int getLength() {
+	/*public int getLength() {
 		return length;
 	}
 	public void setLength(int length) {
 		this.length = length;
-	}
+	}*/
 
-	public String getPrefix() {
+	public List<String> getPrefix() {
 		return prefix;
 	}
-	public void setPrefix(String prefix) {
+	public void setPrefix(List<String> prefix) {
 		this.prefix = prefix;
 	}
 }

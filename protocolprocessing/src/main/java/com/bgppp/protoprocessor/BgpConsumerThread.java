@@ -101,6 +101,7 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 					countKA++;
 					this.kaTimer.resetCounter();
 					consumer.setFsmState(FSMState.ESTABLISHED);
+					//TODO : Start rule handling
 					break;
 			case 1: log.info("Open Packet");
 					consumer.setFsmState(FSMState.OPEN_CONFIRM);
