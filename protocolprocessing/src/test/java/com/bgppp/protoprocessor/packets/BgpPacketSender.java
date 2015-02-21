@@ -51,6 +51,7 @@ public class BgpPacketSender extends Thread {
 			byte[] kalivePacket = bgpKalivePacket.prepareKeepAliveSegment();
 			dataOutput.write(kalivePacket, 0, kalivePacket.length);//We then write the data to the socket.
 
+			System.out.println("-------");
 			BgpUpdatePacket upPac = createUpdatePacket();
 			byte[] updatePacket = upPac.prepareUpdateSegment();
 			dataOutput.write(updatePacket, 0, updatePacket.length);
@@ -65,24 +66,25 @@ public class BgpPacketSender extends Thread {
 	}
 
 	private BgpUpdatePacket createUpdatePacket(){
-		OriginAttributeType oat = new OriginAttributeType(false, true, false, false, "1", "1");
+		OriginAttributeType oat = new OriginAttributeType(false, true, false, false, "1", "0");
 		List<String> ases = new ArrayList<String>();
-		ases.add("1212");
-		ases.add("4545");
-		AsPathAttributeType asat = new AsPathAttributeType(false, true, false, false, "1", "1", ases);
-		NextHopAttributeType nhat = new NextHopAttributeType(false, true, false, false, "50.2.3.4");
+		ases.add("65522");
+		ases.add("65511");
+		AsPathAttributeType asat = new AsPathAttributeType(false, true, false, false, "3", "2", ases);
+		NextHopAttributeType nhat = new NextHopAttributeType(false, true, false, false, "10.1.12.1");
+		MultiExitDiscAttributeType medat = new MultiExitDiscAttributeType(true, false, false, false, "0");
 		LocalPrefAttributeType lfa = new LocalPrefAttributeType(false, true, false, false, "100"); 
-		MultiExitDiscAttributeType medat = new MultiExitDiscAttributeType(true, false, false, false, "1111111");
+		/*MultiExitDiscAttributeType medat = new MultiExitDiscAttributeType(true, false, false, false, "1111111");
 		AtomicAggregateAttributeType aaat = new AtomicAggregateAttributeType(false, true, false, false);
-		AggregatorAttributeType aat = new AggregatorAttributeType(true, true, false, false, "33333", "20.30,40,50");
+		AggregatorAttributeType aat = new AggregatorAttributeType(true, true, false, false, "33333", "20.30.40.50");*/
 		List<Attribute> attribute = new ArrayList<Attribute>();
 		attribute.add(oat);
 		attribute.add(asat);
 		attribute.add(nhat);
-		attribute.add(lfa);
 		attribute.add(medat);
-		attribute.add(aaat);
-		attribute.add(aat);
+		attribute.add(lfa);
+//		attribute.add(aaat);
+//		attribute.add(aat);
 		String wrPrefixes = "";
 		String nlri = "2.1.2.1/20";
 		BgpUpdatePacket p = new BgpUpdatePacket(nlri, attribute, wrPrefixes);
