@@ -1,38 +1,40 @@
 package com.bgppp.protoprocessor.packet;
 
-import java.util.Arrays;
+//import java.util.Arrays;
 
 public class BgpNotificationPacket extends BgpHeader{
 
 	//TODO : List all needed parameters and generate getters and setters.
-	BgpError error;
-	byte[] data;
+	int data;
 	String nodeName;
+	int errorCodeInt ;
+	int errorSubCodeInt;
 	
-	public BgpNotificationPacket(final BgpError error) {
+	/*public BgpNotificationPacket(final BgpError error) {
 		this(error, null);
-	}
+	}*/
 	
-	public BgpNotificationPacket(final BgpError error, final byte[] data) {
+/*	public BgpNotificationPacket(int errorCodeInt ,int errorSubCodeInt, int data) {
 		super();
-		this.error = error;
+		this.errorCodeInt = errorCodeInt;
+		this.errorSubCodeInt = errorSubCodeInt;
 		this.data = data;
-	}
+	}*/
 
-	public BgpError getError() {
+	/*public BgpError getError() {
 		return this.error;
 	}
 	
 	public byte[] getData() {
 		return this.data;
-	}
+	}*/
 	
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("BGP Notification:");
-		builder.append(this.error);
+		builder.append(this.errorCodeInt);
 		builder.append(", data=");
-		builder.append(Arrays.toString(this.data));
+		builder.append(this.data);
 		return builder.toString();
 	}
 	/**
@@ -50,18 +52,18 @@ public class BgpNotificationPacket extends BgpHeader{
 
 		//The second byte is the error subcode
 		Byte[] errorSubCode = new Byte[1];
-		errorCode[0] = getByteArrayForInteger(errorSubCodeInt, 1)[0]; // The two arguments are: first one is the error sub code number. The second one is the number of bytes we want to return, as this is one byte so 1. 
+		errorSubCode[0] = getByteArrayForInteger(errorSubCodeInt, 1)[0]; // The two arguments are: first one is the error sub code number. The second one is the number of bytes we want to return, as this is one byte so 1. 
 
 		//The third and 4th byte form the data field. So this might of the form
 		Byte[] data = new Byte[2];
-		errorCode[0] = getByteArrayForInteger(dataInt, 1)[0]; // The two arguments are: first one is the data. The second one is the number of bytes we want to return, as this is two byte so its 2. 
-		errorCode[1] = getByteArrayForInteger(dataInt, 1)[1];
+		data[0] = getByteArrayForInteger(dataInt, 2)[0]; // The two arguments are: first one is the data. The second one is the number of bytes we want to return, as this is two byte so its 2. 
+		data[1] = getByteArrayForInteger(dataInt, 2)[1];
 
 		//We then combine these top 4 in the same order
 		packet = conc(conc(errorCode, errorSubCode),data);
 
 		//We then add the mandatory BGP Header, to the above packet.
-		Byte[] temp = addHeader(1, packet); 
+		Byte[] temp = addHeader(3, packet); 
 
 		//We then convert the Byte[] to byte[] and return it
 		return getbyteFromByte(temp);

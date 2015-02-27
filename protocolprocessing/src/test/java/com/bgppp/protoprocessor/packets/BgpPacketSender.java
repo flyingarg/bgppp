@@ -7,9 +7,9 @@ import java.net.Socket;
 import java.util.logging.Logger;
 
 import com.bgppp.protoprocessor.packet.BgpKeepalivePacket;
+import com.bgppp.protoprocessor.packet.BgpNotificationPacket;
 import com.bgppp.protoprocessor.packet.BgpOpenPacket;
 import com.bgppp.protoprocessor.packet.BgpUpdatePacket;
-
 import com.bgppp.protoprocessor.rules.*;
 
 import java.util.*;
@@ -51,10 +51,13 @@ public class BgpPacketSender extends Thread {
 			byte[] kalivePacket = bgpKalivePacket.prepareKeepAliveSegment();
 			dataOutput.write(kalivePacket, 0, kalivePacket.length);//We then write the data to the socket.
 
-			System.out.println("-------");
 			BgpUpdatePacket upPac = createUpdatePacket();
 			byte[] updatePacket = upPac.prepareUpdateSegment();
 			dataOutput.write(updatePacket, 0, updatePacket.length);
+
+			BgpNotificationPacket no = new BgpNotificationPacket();
+			byte[] noPacket = no.prepareNotificationSegment(2,2,1244);
+			dataOutput.write(noPacket, 0, noPacket.length);
 			//We then close the data stream and socket.
 			dataOutput.close();
 			socket.close();
