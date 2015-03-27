@@ -8,6 +8,7 @@ import org.apache.log4j.*;
 import com.bgppp.protoprocessor.graphs.GraphNode;
 import com.bgppp.protoprocessor.utils.AddressAndMask;
 import com.bgppp.protoprocessor.remote.SshServerDaemon;
+import com.bgppp.protoprocessor.rules.RuleStore;
 
 public class BgpConfig extends GraphNode{
 	public static Logger log = Logger.getLogger(BgpConfig.class.getName());
@@ -16,6 +17,8 @@ public class BgpConfig extends GraphNode{
 	private String routerName;
 	private List<Link> links = new ArrayList<Link>();
 	private HashMap<String, AddressAndMask> addressAndMasks = new HashMap<String, AddressAndMask>();
+	private RuleStore ruleStore = new RuleStore();
+
 	public BgpConfig(String name) {
 		super(name);
 		this.routerName = name;
@@ -32,6 +35,11 @@ public class BgpConfig extends GraphNode{
 	public HashMap<String, AddressAndMask> getAddressAndMasks() {
 		return addressAndMasks;
 	}
+
+	public RuleStore getRuleStore() {
+		return ruleStore;
+	}
+
 	public boolean addAddressAndMask(AddressAndMask newAddressAndMask) {
 		addressAndMasks.put(newAddressAndMask.getName(), newAddressAndMask);
 		return true;

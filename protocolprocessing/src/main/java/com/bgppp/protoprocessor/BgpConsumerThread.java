@@ -9,6 +9,8 @@ import java.util.Date;
 
 import org.apache.log4j.*;
 
+import com.bgppp.protoprocessor.packet.BgpUpdatePacket;
+import com.bgppp.protoprocessor.rules.Rule;
 import com.bgppp.protoprocessor.timers.ConnectRetryTimer;
 import com.bgppp.protoprocessor.timers.HoldTimer;
 import com.bgppp.protoprocessor.timers.KeepAliveSender;
@@ -101,7 +103,8 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 					countKA++;
 					this.kaTimer.resetCounter();
 					consumer.setFsmState(FSMState.ESTABLISHED);
-					//TODO : Start rule handling
+					Rule rule = new Rule(listen.getRemoteSocketAddress()+"", "0.0.0.0", consumer.getBgpConfig().getRouterName(), "0", Rule.MAX_LOCAL_PREF, "", "local");
+					consumer.getBgpConfig().getRuleStore().addLocalRib(rule);
 					break;
 			case 1: log.info("Open Packet");
 					consumer.setFsmState(FSMState.OPEN_CONFIRM);
@@ -113,6 +116,8 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 					break;
 			case 2: log.info("Update Packet");
 					toSendUpdate(inputStream, outputStream, log);
+					BgpUpdatePacket packet = new BgpUpdatePacket(packRest);
+					consumer.getBgpConfig().getRuleStore().addAdjRibIn(packet.getRule("in"));
 					countUpdate++;
 					break;
 			case 3: log.info("Notificaiton Packet");

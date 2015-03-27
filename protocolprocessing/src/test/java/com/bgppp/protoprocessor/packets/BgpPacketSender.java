@@ -21,7 +21,7 @@ public class BgpPacketSender extends Thread {
 	public void run(){
 		try{
 			//Make this sleep for 2 seconds so that the listener on the other end gets a chance to start listening.
-			this.sleep(2000);
+			Thread.sleep(2000);
 			
 			//Create a simple socket, note that this is not ServerSocket.
 			Socket socket = new Socket();
@@ -89,7 +89,7 @@ public class BgpPacketSender extends Thread {
 //		attribute.add(aaat);
 //		attribute.add(aat);
 		String wrPrefixes = "";
-		String nlri = "2.1.2.1/20";
+		String nlri = "2/8";
 		BgpUpdatePacket p = new BgpUpdatePacket(nlri, attribute, wrPrefixes);
 		return p;
 	}

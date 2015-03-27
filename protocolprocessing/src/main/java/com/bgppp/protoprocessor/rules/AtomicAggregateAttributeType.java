@@ -4,9 +4,9 @@ public class AtomicAggregateAttributeType extends Attribute{
 
 	String pathSegmentLength = "0";
 	
-	public AtomicAggregateAttributeType(Byte[] bytes) throws Exception{
+	public AtomicAggregateAttributeType(byte[] bytes) throws Exception{
 		super();
-		if(bytes[1].intValue() != 6){ 
+		if(getIntegerFromBytes(new byte[]{bytes[1]}) != 6){ 
 			throw new AttributeTypeCreationException("Its not the correct attribute type");
 		}
 		this.isOptional = isBitSet(bytes[0], 7); 
@@ -37,5 +37,12 @@ public class AtomicAggregateAttributeType extends Attribute{
 		Byte[] typeCode = new Byte[]{Byte.parseByte(getType(),10)};
 		Byte[] length = new Byte[]{Byte.parseByte("0",10)};
 		return conc(conc(flagsAsBytes,typeCode),length);
+	}
+
+	/**
+	 * @return the pathSegmentLength
+	 */
+	public String getPathSegmentLength() {
+		return pathSegmentLength;
 	}
 }

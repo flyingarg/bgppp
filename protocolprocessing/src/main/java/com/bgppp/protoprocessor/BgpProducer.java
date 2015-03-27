@@ -13,14 +13,10 @@ import java.util.Date;
 
 import org.apache.log4j.*;
 
-import com.bgppp.protoprocessor.timers.ConnectRetryTimer;
-import com.bgppp.protoprocessor.timers.HoldTimer;
-import com.bgppp.protoprocessor.timers.KeepAliveSender;
-import com.bgppp.protoprocessor.timers.KeepAliveTimer;
-import com.bgppp.protoprocessor.timers.TimerListener;
-import com.bgppp.protoprocessor.utils.TimeOutUtils;
-import com.bgppp.protoprocessor.utils.ControlledRandom;
-import com.bgppp.protoprocessor.utils.GetProperties;
+import com.bgppp.protoprocessor.timers.*;
+import com.bgppp.protoprocessor.utils.*;
+import com.bgppp.protoprocessor.packet.BgpUpdatePacket;
+import com.bgppp.protoprocessor.rules.*;
 
 public class BgpProducer extends BgpOperations implements TimerListener{
 	public static Logger log = Logger.getLogger(BgpProducer.class.getName());
@@ -190,7 +186,8 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 					this.kaTimer.resetCounter();
 					if(!kaSender.isRunning())kaSender.start();
 					setFsmState(FSMState.ESTABLISHED);
-					//TODO : Start Rule handling
+					Rule rule = new Rule(socket.getRemoteSocketAddress()+"", "0.0.0.0", bgpConfig.getRouterName(), "0", Rule.MAX_LOCAL_PREF, "", "local");
+					bgpConfig.getRuleStore().addLocalRib(rule);
 					break;
 			case 1: log.info("Open Packet");
 					this.kaTimer.resetCounter();
@@ -199,6 +196,8 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 					countOpen++;
 					break;
 			case 2: log.info("Update Packet");
+					BgpUpdatePacket up = new BgpUpdatePacket(packRest);
+					bgpConfig.getRuleStore().addAdjRibIn(up.getRule("in"));
 					countUpdate++;
 					break;
 			case 3: log.info("Notificaiton Packet");

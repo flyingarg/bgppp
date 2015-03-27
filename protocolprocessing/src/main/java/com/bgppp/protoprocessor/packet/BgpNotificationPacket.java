@@ -1,7 +1,5 @@
 package com.bgppp.protoprocessor.packet;
 
-//import java.util.Arrays;
-
 public class BgpNotificationPacket extends BgpHeader{
 
 	//TODO : List all needed parameters and generate getters and setters.
@@ -9,25 +7,6 @@ public class BgpNotificationPacket extends BgpHeader{
 	String nodeName;
 	int errorCodeInt ;
 	int errorSubCodeInt;
-	
-	/*public BgpNotificationPacket(final BgpError error) {
-		this(error, null);
-	}*/
-	
-/*	public BgpNotificationPacket(int errorCodeInt ,int errorSubCodeInt, int data) {
-		super();
-		this.errorCodeInt = errorCodeInt;
-		this.errorSubCodeInt = errorSubCodeInt;
-		this.data = data;
-	}*/
-
-	/*public BgpError getError() {
-		return this.error;
-	}
-	
-	public byte[] getData() {
-		return this.data;
-	}*/
 	
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();

@@ -5,9 +5,9 @@ public class AggregatorAttributeType extends Attribute{
 	String lastAs;
 	String lastBgpSpeaker;
 
-	public AggregatorAttributeType(Byte[] bytes) throws Exception{
+	public AggregatorAttributeType(byte[] bytes) throws Exception{
 		super();
-		if(bytes[1].intValue() != 7){ 
+		if(bytes[1] != 7){ 
 			throw new AttributeTypeCreationException("Its not the correct attribute type");
 		}
 		this.isOptional = isBitSet(bytes[0], 7); 
@@ -15,11 +15,11 @@ public class AggregatorAttributeType extends Attribute{
 		this.isPartial = isBitSet(bytes[0], 5); 
 		this.isExtended = isBitSet(bytes[0], 4);
 
-		this.lastAs = getIntegerFromBytes(new byte[]{(byte)bytes[3],(byte)bytes[4]})+"";
-		this.lastBgpSpeaker = getIntegerFromBytes(new byte[]{(byte)bytes[5]})+"."
-			+getIntegerFromBytes(new byte[]{(byte)bytes[6]})+"."
-			+getIntegerFromBytes(new byte[]{(byte)bytes[7]})+"."
-			+getIntegerFromBytes(new byte[]{(byte)bytes[8]});
+		this.lastAs = getIntegerFromBytes(new byte[]{bytes[3],bytes[4]})+"";
+		this.lastBgpSpeaker = getIntegerFromBytes(new byte[]{bytes[5]})+"."
+			+getIntegerFromBytes(new byte[]{bytes[6]})+"."
+			+getIntegerFromBytes(new byte[]{bytes[7]})+"."
+			+getIntegerFromBytes(new byte[]{bytes[8]});
 	}
 
 	/**
@@ -59,5 +59,12 @@ public class AggregatorAttributeType extends Attribute{
 		getByteArrayForInteger(Integer.parseInt(identifier[0]),4)[0]};
 
 		return conc(conc(conc(conc(flagsAsBytes,typeCode),length),as),speaker);
+	}
+
+	public String getLastAs() {
+		return lastAs;
+	}
+	public String getLastBgpSpeaker() {
+		return lastBgpSpeaker;
 	}
 }

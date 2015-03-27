@@ -4,17 +4,17 @@ public class MultiExitDiscAttributeType extends Attribute{
 
 	String multiExitDiscriminator;
 	String multiExitDiscriminatorLength;
-	public MultiExitDiscAttributeType(Byte[] bytes) throws Exception{
+	public MultiExitDiscAttributeType(byte[] bytes) throws Exception{
 		super();
-		if(bytes[1].intValue() != 4){
+		if(getIntegerFromBytes(new byte[]{bytes[1]}) != 4){
 			throw new AttributeTypeCreationException("Its not the correct attribute type");
 		}
 		this.isOptional = isBitSet(bytes[0], 7); 
 		this.isTransitive = isBitSet(bytes[0], 6); 
 		this.isPartial = isBitSet(bytes[0], 5); 
 		this.isExtended = isBitSet(bytes[0], 4); 
-		multiExitDiscriminatorLength = bytes[2].intValue()+"";
-		multiExitDiscriminatorLength = getIntegerFromBytes(new byte[]{bytes[3],bytes[4],bytes[5],bytes[6]})+"";
+		multiExitDiscriminatorLength = getIntegerFromBytes(new byte[]{bytes[2]})+"";
+		multiExitDiscriminator = getIntegerFromBytes(new byte[]{bytes[3],bytes[4],bytes[5],bytes[6]})+"";
 	}
 
 	/**
@@ -46,6 +46,10 @@ public class MultiExitDiscAttributeType extends Attribute{
 		byte[] r = getByteArrayForInteger(Integer.parseInt(this.multiExitDiscriminator), 4);
 		Byte[] med = new Byte[]{r[0],r[1],r[2],r[3]};
 		return conc(conc(conc(flagsAsBytes,typeCode),length),med);
+	}
+
+	public String getMultiExitDiscriminator() {
+		return multiExitDiscriminator;
 	}
 
 }

@@ -4,9 +4,9 @@ public class LocalPrefAttributeType extends Attribute{
 
 	String localPref;
 	String localPrefLen;
-	public LocalPrefAttributeType(Byte[] bytes) throws Exception{
+	public LocalPrefAttributeType(byte[] bytes) throws Exception{
 		super();
-		if(bytes[1].intValue() != 5){
+		if(getIntegerFromBytes(new byte[]{bytes[1]}) != 5){
 			throw new AttributeTypeCreationException("Its not the correct attribute type");
 		}
 		this.isOptional = isBitSet(bytes[0], 7); 
@@ -14,8 +14,8 @@ public class LocalPrefAttributeType extends Attribute{
 		this.isPartial = isBitSet(bytes[0], 5); 
 		this.isExtended = isBitSet(bytes[0], 4); 
 
-		localPrefLen = bytes[2].intValue()+"";
-		localPrefLen = getIntegerFromBytes(new byte[]{bytes[3],bytes[4],bytes[5],bytes[6]})+"";
+		localPrefLen = getIntegerFromBytes(new byte[]{bytes[2]})+"";
+		localPref = getIntegerFromBytes(new byte[]{bytes[3],bytes[4],bytes[5],bytes[6]})+"";
 	}
 
 	/**
@@ -49,6 +49,10 @@ public class LocalPrefAttributeType extends Attribute{
 		byte[] r = getByteArrayForInteger(Integer.parseInt(this.localPref), 4);
 		Byte[] med = new Byte[]{r[0],r[1],r[2],r[3]};
 		return conc(conc(conc(flagsAsBytes,typeCode),length),med);
+	}
+
+	public String getLocalPref() {
+		return localPref;
 	}
 
 }

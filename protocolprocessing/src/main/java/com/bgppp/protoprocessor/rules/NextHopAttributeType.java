@@ -4,9 +4,9 @@ public class NextHopAttributeType extends Attribute{
 
 	private String nextHop = "";
 
-	public NextHopAttributeType(Byte[] bytes) throws Exception{
+	public NextHopAttributeType(byte[] bytes) throws Exception{
 		super();
-		if(bytes[1].intValue() != 3){ 
+		if(getIntegerFromBytes(new byte[]{bytes[1]}) != 3){ 
 			throw new AttributeTypeCreationException("Either the bytes are not of correct number or its not the correct attribute type");
 		}
 		this.isOptional = isBitSet(bytes[0], 7);
@@ -51,6 +51,10 @@ public class NextHopAttributeType extends Attribute{
 			getByteArrayForInteger(Integer.parseInt(s[3]), 1)[0],
 		};
 		return conc(conc(conc(flagsAsBytes, typeCode),hopLen),hop);
+	}
+
+	public String getNextHop() {
+		return nextHop;
 	}
 
 }

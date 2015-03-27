@@ -4,9 +4,9 @@ public class OriginAttributeType extends Attribute{
 
 	private String attrValueLength;
 	private String attrValue;
-	public OriginAttributeType(Byte[] bytes) throws Exception{
+	public OriginAttributeType(byte[] bytes) throws Exception{
 		super();
-		if(bytes.length!=4 || bytes[1].intValue() != 1){
+		if(bytes.length!=4 || getIntegerFromBytes(new byte[]{bytes[1]}) != 1){
 			throw new AttributeTypeCreationException("Either the bytes are not of correct number or its not the correct attribute type");
 		}
 		this.isOptional = isBitSet(bytes[0], 7);
@@ -14,8 +14,8 @@ public class OriginAttributeType extends Attribute{
 		this.isPartial = isBitSet(bytes[0], 5);
 		this.isExtended = isBitSet(bytes[0], 4);
 
-		this.attrValueLength = bytes[2].intValue()+"";
-		this.attrValue = bytes[3].intValue()+"";
+		this.attrValueLength = getIntegerFromBytes(new byte[]{bytes[2]})+"";
+		this.attrValue = getIntegerFromBytes(new byte[]{bytes[3]})+"";
 	}
 	/**
 	 * First 4 flags are usually 0100
@@ -43,6 +43,10 @@ public class OriginAttributeType extends Attribute{
 		Byte[] attrValueLength = new Byte[]{Byte.parseByte(this.attrValueLength,10)};//value feild is always 1byte is ORIGIN
 		Byte[] attrValue = new Byte[]{Byte.parseByte(this.attrValue,10)};
 		return conc(conc(conc(flagsAsBytes, typeCode),attrValueLength),attrValue);
+	}
+
+	public String getAttrValue() {
+		return attrValue;
 	}
 
 }

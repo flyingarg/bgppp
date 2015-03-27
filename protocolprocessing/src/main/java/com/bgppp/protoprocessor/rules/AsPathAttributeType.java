@@ -8,9 +8,9 @@ public class AsPathAttributeType extends Attribute{
 	String pathSegmentLength;
 	List<String> pathSegmentValue;
 
-	public AsPathAttributeType(Byte[] bytes) throws Exception{
+	public AsPathAttributeType(byte[] bytes) throws Exception{
 		super();
-		if(bytes[1].intValue() != 2){ 
+		if(getIntegerFromBytes(new byte[]{bytes[1]}) != 2){ 
 			throw new AttributeTypeCreationException("Its not the correct attribute type");
 		}
 		this.isOptional = isBitSet(bytes[0], 7); 
@@ -18,11 +18,11 @@ public class AsPathAttributeType extends Attribute{
 		this.isPartial = isBitSet(bytes[0], 5); 
 		this.isExtended = isBitSet(bytes[0], 4); 
 
-		pathSegmentType = bytes[3].intValue()+"";
-		pathSegmentLength = bytes[4].intValue()+"";
+		pathSegmentType = getIntegerFromBytes(new byte[]{bytes[3]})+"";
+		pathSegmentLength = getIntegerFromBytes(new byte[]{bytes[4]})+"";
 		pathSegmentValue = new ArrayList<String>();
-		for(int i=0; i<bytes[4].intValue(); i++){
-			pathSegmentValue.add(""+getIntegerFromBytes(new byte[]{bytes[6+(i*2)],bytes[7+(i*2)]}));
+		for(int i=0; i<getIntegerFromBytes(new byte[]{bytes[4]}); i++){
+			pathSegmentValue.add(""+getIntegerFromBytes(new byte[]{bytes[5+(i*2)],bytes[6+(i*2)]}));
 		}
 	}
 	/**
@@ -68,4 +68,17 @@ public class AsPathAttributeType extends Attribute{
 		return conc(conc(conc(conc(conc(flagsAsBytes,typeCode),totalLength),psType),psLength),psValue);
 	}
 
+	public String getPathSegmentType() {
+		return pathSegmentType;
+	}
+	public String getPathSegmentLength() {
+		return pathSegmentLength;
+	}
+	public String getPathSegmentValue() {
+		String response = "";
+		for(String path : pathSegmentValue){
+			response = response + path + ",";
+		}
+		return response;
+	}
 }

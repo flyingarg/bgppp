@@ -1,0 +1,45 @@
+ESTABLISHED
+	Reject UPDATE messages otherwise
+
+
+After receiving a message
+	Discard
+		Unvalidated attribute feild
+		transitive - true and unrecognized, set third higher bit and pass on
+		non empty withdraw routes, remove stuff from Adj-RIB-In or in case of connection loss.
+	Retain
+		optional and recognized
+		ADD/REPLACE same NLRI
+
+
+	In-RIB
+		PhaseI - int routeSelection(route): /non-negative integer/-1 to not include in Loc-RIB/
+		does not use other routes.
+		The results are stored in In-RIB.
+
+
+Final route Selection
+	Phase II - chooseBestRoute() - 
+		Uses In-RIB
+		Places the "best routes for each destination" and places them in Loc-RIB
+	Phase III - decideOutRIB() - route aggregation and information reduction.
+
+
+Decision Process - All phases lock others when running.
+PHASE I
+	Starts as soon as UPDATE message received.
+	Lock/Unlock
+	calcluates local preference. MIN - 0, MAX - 8589934591
+		IGP 0-131071
+		EGP 131071-8589934591
+	All routes find their way to In-RBI, but must have the feild LocRibEligible(-1 or new calculated localPref value)
+
+PHASE II
+	If NEXT_HOP is an address not resolvable - ignore
+	If AS_PATH attribute has a loop - ignore
+		Two or more routes for a set of destination ? - Use heighest degree of preference
+		Accept routes that are the only one's for a destination
+		Selected as a result of tie breaking rules.
+	If a new route to the same destination is found, it replaces the old rule.
+	Routes to interfaces can be added. The interface must be up though.
+
