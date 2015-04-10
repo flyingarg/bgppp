@@ -23,6 +23,19 @@ public class BgpUpdatePacket extends BgpHeader{
 	}
 
 	/**
+	 */
+	public BgpUpdatePacket(Rule rule){
+		this.paPrefixes = rule.getNetwork();
+		List<Attribute> atr = new ArrayList<Attribute>();
+		atr.add(rule.getNextHop());
+		atr.add(rule.getMetric());
+		atr.add(rule.getLocalPref());
+		atr.add(rule.getOrigin());
+		atr.add(rule.getPath());
+		this.paAttributes = atr;
+		this.wrPrefixes = rule.getWrPrefix();
+	}
+	/**
 	 * Create a BgpUpdatePacket. This would create an object that can be used to generate the byte[] response using the <code>byte[] prepareUpdateSegment()</code> method.
 	 * @param paPrefixes Enter paPrefix of the for <code>2/8</code> or <code>2.5/16</code>. These translate to prefixes <code>2.0.0.0/8 and 2.5.0.0/16</code>
 	 * @param paAttributes Enter a list of attributes.
@@ -43,10 +56,10 @@ public class BgpUpdatePacket extends BgpHeader{
 		this.wrPrefixes = new String();
 		this.paAttributes = new ArrayList<Attribute>();
 		ByteBuffer buffer = ByteBuffer.wrap(bytes);
-		//buffer.position(16);
+		buffer.position(16);
 		byte[] packetLength = new byte[2];buffer.get(packetLength);
 		if(bytes.length != getIntegerFromBytes(packetLength)){
-			log.error("Actual length and length specified in feild are not same.");
+			log.error("Actual length and length specified in feild are not same." + bytes.length + ":" + getIntegerFromBytes(packetLength));
 		}
 		byte[] packetType = new byte[1]; buffer.get(packetType);
 		if(2 != getIntegerFromBytes(packetType)){
@@ -54,9 +67,7 @@ public class BgpUpdatePacket extends BgpHeader{
 		}
 		byte[] wrLength = new byte[2]; buffer.get(wrLength);
 		int withdrawrouteLength = getIntegerFromBytes(wrLength);
-		System.out.println(buffer.position());
 		byte[] withdrawroute = new byte[withdrawrouteLength];buffer.get(withdrawroute);
-		System.out.println(buffer.position());
 		this.wrPrefixes = stringFromPrefix(withdrawroute);
 
 		byte[] paLength = new byte[2]; buffer.get(paLength);
@@ -108,8 +119,8 @@ public class BgpUpdatePacket extends BgpHeader{
 		Byte[] totalPaLength = new Byte[2];
 		totalPaLength = new Byte[]{getByteArrayForInteger(totalLengthAsInt,2)[0],getByteArrayForInteger(totalLengthAsInt,2)[1]};
 		packet = conc(conc(conc(wrPacket,totalPaLength),paas),nlri);
-		Byte[] finalPacket = addHeader(2, packet);
-		return getbyteFromByte(finalPacket);
+		return addHeader(2, getbyteFromByte(packet));
+		//return getbyteFromByte(finalPacket);
 	}
 
 	public boolean isUpdateMessage(){
@@ -174,23 +185,24 @@ public class BgpUpdatePacket extends BgpHeader{
 		return response;
 	}
 
-	public Rule getRule(String type){
+	public Rule getRule(String rcvFrom){//TODO : might need too eliminate type alltogether.
 		Rule rule = new Rule();
 		rule.setNetwork(getPaPrefixes());
-		rule.setType(type);
+		//rule.setType(type);
 		for(Attribute attr : getPaAttributes()){
 			if(attr instanceof NextHopAttributeType){
-				rule.setNextHop(((NextHopAttributeType)attr).getNextHop());
+				rule.setNextHop((NextHopAttributeType)attr);
 			}else if(attr instanceof LocalPrefAttributeType){
-				rule.setLocalPref(((LocalPrefAttributeType)attr).getLocalPref());
+				rule.setLocalPref((LocalPrefAttributeType)attr);
 			}else if(attr instanceof OriginAttributeType){
-				rule.setOrigin(((OriginAttributeType)attr).getAttrValue());
+				rule.setOrigin((OriginAttributeType)attr);
 			}else if(attr instanceof AsPathAttributeType){
-				rule.setPath(((AsPathAttributeType)attr).getPathSegmentValue());
+				rule.setPath((AsPathAttributeType)attr);
 			}else if(attr instanceof MultiExitDiscAttributeType){
-				rule.setMetric(((MultiExitDiscAttributeType)attr).getMultiExitDiscriminator());
+				rule.setMetric((MultiExitDiscAttributeType)attr);
 			}
 		}
+		rule.setPeerHandlerName(rcvFrom);
 		return rule;
 	}
 

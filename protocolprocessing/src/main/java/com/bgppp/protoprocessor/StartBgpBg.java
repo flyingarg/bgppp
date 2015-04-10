@@ -119,7 +119,6 @@ public class StartBgpBg {
 					//Convert String configs to objects and then Validate these objects to find config changes
 					ConfigHelper.validConfigChanges(ConfigHelper.stringToBgpConfig(configs), routers);
 					configs.clear();
-					//TODO : Create a thread that monitors the producers and consumers and gets data out of them
 				}
 			}
 		}

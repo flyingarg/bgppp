@@ -2,6 +2,7 @@ package com.bgppp.protoprocessor.utils;
 
 import java.net.InetAddress;
 import java.util.HashMap;
+
 import org.apache.log4j.*;
 
 public class AddressAndMask {
@@ -11,6 +12,7 @@ public class AddressAndMask {
 	private String mask;
 	private String name;
 	private String routerName;
+	private String accessNetwork;
 	/**
 	 * Constructor
 	 * 
@@ -117,6 +119,14 @@ public class AddressAndMask {
 			}
 		}
 		return false;
+	}
+
+	public String getAccessNetwork() {
+		return accessNetwork;
+	}
+
+	public void setAccessNetwork(String accessNetwork) {
+		this.accessNetwork = accessNetwork;	
 	}
 
 }

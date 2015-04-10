@@ -6,7 +6,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
+import java.util.*;
 import org.apache.log4j.*;
 
 import com.bgppp.protoprocessor.utils.*;
@@ -19,7 +19,7 @@ public class BgpConsumer extends Thread {
 	private boolean isRunning = false;
 	private BgpProducer bgpProducer = null;
 	public HashMap<String, BgpConsumerThread> connsFromPeers = new HashMap<String, BgpConsumerThread>();
-	private FSMState fsmState = null;
+	private FSMState fsmState = FSMState.IDLE;
 	private ServerSocket serverSocket = null;
 	public boolean isRunning() {
 		return isRunning;
@@ -49,7 +49,6 @@ public class BgpConsumer extends Thread {
 
 	@Override
 	public void run() {
-		log.info("Starting Consumer : " + bgpConfig.getRouterName() + ":" +link);
 		setFsmState(FSMState.IDLE);
 		try {
 			InetAddress address = bgpConfig.getAddressAndMaskByName(link.getSourceAddressName()).getAddress();
@@ -61,9 +60,9 @@ public class BgpConsumer extends Thread {
 			setRunning(true);
 			while(isRunning()){
 				Socket listen = serverSocket.accept();
+				log.info("C("+address+") in CONNECT state " + listen.getRemoteSocketAddress().toString());
 				setFsmState(FSMState.CONNECT);
-				log.info("Preventing " + "Producer : " + bgpConfig.getRouterName() + ":" +link + " from connecting and closing thread");
-				getBgpProducer().setRunning(false);
+				getBgpProducer().timeUp();
 				BgpConsumerThread consumerThread = new BgpConsumerThread(
 						this
 						,listen
@@ -71,12 +70,16 @@ public class BgpConsumer extends Thread {
 						,new DataOutputStream(listen.getOutputStream())
 						,getBgpProducer()
 						,this.getName());
-				InetAddress remoteAddress = ((InetSocketAddress)listen.getRemoteSocketAddress()).getAddress();
-				connsFromPeers.put(getBgpConfig().getRouterName()+link.getSourceAddressName() + (remoteAddress == link.getDestinationAddress() ? link.getDestinationAddress().toString() : remoteAddress.toString()), consumerThread);
+				String remoteAddress = listen.getRemoteSocketAddress().toString();
+				remoteAddress = remoteAddress.split(":")[0];
+				connsFromPeers.put(
+						getBgpConfig().getRouterName() + link.getSourceAddress().toString() + remoteAddress
+						, consumerThread);
 				consumerThread.start();
 			}
 		}catch(Exception e){
-			log.info("Exception starting consumerThreads " + e.getMessage());
+			log.error("Exception starting consumerThreads " + e.getMessage());
+			e.printStackTrace();
 		}
 	}
 	public BgpConfig getBgpConfig(){
@@ -98,6 +101,28 @@ public class BgpConsumer extends Thread {
 		return fsmState;
 	}
 	public void setFsmState(FSMState fsmState) {
+		if(!this.fsmState.equals(fsmState)){
+			if(fsmState == FSMState.ESTABLISHED){
+				addPeer(getOneDamnedConThread().nameOfRouterConnectedTo);
+			}if(FSMState.ESTABLISHED == this.fsmState && FSMState.IDLE == fsmState){
+				getBgpConfig().getRuleStore().removeRulesFrom(link.getDestinationAddress().toString());
+			}
+		}
 		this.fsmState = fsmState;
 	}
+	
+	private void addPeer(String s){
+		bgpConfig.getRuleStore().addPeers(s+"=="+this.getName(), (BgpOperations)this.getOneDamnedConThread());
+	}
+	public BgpConsumerThread getOneDamnedConThread(){
+		if(connsFromPeers.size() == 0)
+			return null;
+		for(String key : connsFromPeers.keySet()){
+			if(connsFromPeers.get(key) != null){
+				return connsFromPeers.get(key);
+			}
+		}
+		return null;
+	}
+
 }

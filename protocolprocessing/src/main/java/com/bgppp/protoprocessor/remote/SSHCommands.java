@@ -3,9 +3,11 @@ package com.bgppp.protoprocessor.remote;
 import org.apache.log4j.*;
 
 import com.bgppp.protoprocessor.*;
+import com.bgppp.protoprocessor.rules.Rule;
 import com.bgppp.protoprocessor.utils.*;
 
 import java.net.*;
+import java.util.HashMap;
 
 public class SSHCommands{
 	private static final Logger log = Logger.getLogger(SSHCommands.class);
@@ -116,5 +118,34 @@ public class SSHCommands{
 		}
 		return response;
 
+	}
+
+	public String getRule(String s, BgpConfig config){
+		String response = "";
+		String split[] = s.trim().split(" ");
+		if(split.length != 2)
+			return "USAGE :  %printrule [local|in|out]\n";
+		response+="NETWORK\tNEXT_HOP\tAS_PATH\tORIGIN\tLOCAL_PREF\tMUTI_EXIT_DISC\n";
+		HashMap<String, Rule> rules = null;
+		if("local".equals(split[1])){
+			rules = config.getRuleStore().getLocalRib();
+		}else if("in".equals(split[1])){
+			rules = config.getRuleStore().getAdjRibIn();
+		}else if("out".equals(split[1])){
+			rules = config.getRuleStore().getAdjRibOut();
+		}
+		if(rules == null){
+			return "Error: Could not process request.\n";
+		}
+		for(String key : rules.keySet()){
+			Rule rule = rules.get(key);
+			response+=rule.getNetwork()+"\t"+
+				rule.getNextHop().getNextHop()+"\t"+
+				rule.getPath().getPathSegmentAsString()+"\t"+
+				rule.getOrigin().getAttrValue()+"\t"+
+				rule.getLocalPref().getLocalPref()+"\t"+
+				rule.getMetric().getMultiExitDiscriminator()+"\n";
+		}
+		return response;
 	}
 }

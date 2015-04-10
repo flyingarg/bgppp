@@ -2,9 +2,9 @@ package com.bgppp.protoprocessor.utils;
 
 public class TimeOutUtils {
 
-	public static int KEEPALIVE = 30000;
-	public static int READ_SOMTIMEOUT = 30000;// More than keep alive, :-/
-	public static int HOLDTIME = 30000;
-	public static int RECONNECT_TIME = 30000;
-	public static int SENDKEEPALIVE = 10000;
+	public static int KEEPALIVE = 12000;
+	public static int READ_SO_TIMEOUT = 15000;// More than keep alive, :-/
+	public static int HOLDTIME = 12000;
+	public static int RECONNECT_TIME = 12000;
+	public static int SENDKEEPALIVE = 6000;
 }

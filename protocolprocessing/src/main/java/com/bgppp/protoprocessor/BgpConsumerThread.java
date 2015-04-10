@@ -5,12 +5,12 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Date;
+import java.nio.ByteBuffer;
+import java.util.*;
 
 import org.apache.log4j.*;
 
-import com.bgppp.protoprocessor.packet.BgpUpdatePacket;
-import com.bgppp.protoprocessor.rules.Rule;
+import com.bgppp.protoprocessor.packet.*;
 import com.bgppp.protoprocessor.timers.ConnectRetryTimer;
 import com.bgppp.protoprocessor.timers.HoldTimer;
 import com.bgppp.protoprocessor.timers.KeepAliveSender;
@@ -24,11 +24,13 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 	public DataOutputStream outputStream = null;
 	public boolean running = true;
 	public boolean alive = true;
+	
 	public Long keepAliveTimer = (new Date()).getTime();
 	public KeepAliveTimer kaTimer = null;
 	private KeepAliveSender kaSender = null;
 	public ConnectRetryTimer connectRetryTimer = null;
 	public HoldTimer holdTimer = null;
+	
 	private BgpProducer bgpProducer = null;
 	private BgpConsumer consumer = null;
 
@@ -39,18 +41,23 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 	private int countOthers = 0;
 	private int countNotification = 0;
 
+	private boolean isEstablished = false;
+
+	public String nameOfRouterConnectedTo = "";
+	public String destinationAddress = "";	
 	public BgpConsumerThread(BgpConsumer consumer, Socket listen, DataInputStream inputStream, DataOutputStream outputStream, BgpProducer bgpProducer, String name){
 		this.listen = listen;
 		this.consumer = consumer;
 		this.inputStream = inputStream;
 		this.outputStream = outputStream;
 		this.bgpProducer = bgpProducer;
-		name = name + listen.getRemoteSocketAddress();
-		this.setName("CT-"+name);
+		this.setName(consumer.getBgpConfig().getRouterName()+"C("+listen.getLocalAddress().toString()+")->" + listen.getRemoteSocketAddress().toString());
 		this.kaTimer = new KeepAliveTimer(this.getName(), (new Date()).getTime(), this);this.kaTimer.start();
 		this.connectRetryTimer = new ConnectRetryTimer("", (new Date()).getTime(), this);
 		this.holdTimer = new HoldTimer("", (new Date()).getTime(), this);
-		this.kaSender = new KeepAliveSender("KAS-"+this.getName(),inputStream, outputStream, log);
+		this.kaSender = new KeepAliveSender("KAS-"+this.getName());
+		this.kaSender.setInputStream(inputStream);
+		this.kaSender.setOutputStream(outputStream);
 	}
 
 	@Override
@@ -81,54 +88,72 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 						packRest = new byte[getInt(packLen)-19];
 					inputStream.read(packRest);
 					ffByteCount = 0;
-					processPacket(getInt(packLen),getInt(packType),packRest);
+					if(getInt(packType) == 2 || getInt(packType) == 1 ){
+						ByteBuffer completePacket = ByteBuffer.allocate(getInt(packLen));
+						completePacket.put(getMarker());
+						completePacket.put(packLen);
+						completePacket.put(packType);
+						completePacket.put(packRest);
+						processPacket(getInt(packLen),getInt(packType),completePacket.array());
+					}else{
+						processPacket(getInt(packLen),getInt(packType),packRest);
+					}
+
 				}
 			}
-			log.info("CT exited isRunning");
 		}catch(EOFException eofe){
 			try{
 				timeUp();
 			}catch(Exception w){
 				log.error("Encountered EOF");
+				log.error("parsing packet : " + w.getMessage());
+				w.printStackTrace();
 			}
 		}catch(Exception e){
 			log.error(e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
 	public void processPacket(int packLen,int packType,byte[] packRest){
-		log.info("Packet received, type "+packType+" length "+ packLen);
+		String type="";
+		if(packType == 4)type="KeepAlive";else if(packType == 1)type="Open";else if(packType == 2)type="Update";else if(packType == 3)type="Notification";
+		log.info("Packet received, type "+type+" length "+ packRest.length);
 		switch(packType){
-			case 4: log.info("KeepAlive Packet");
-					countKA++;
+			case 4: countKA++;
 					this.kaTimer.resetCounter();
-					consumer.setFsmState(FSMState.ESTABLISHED);
-					Rule rule = new Rule(listen.getRemoteSocketAddress()+"", "0.0.0.0", consumer.getBgpConfig().getRouterName(), "0", Rule.MAX_LOCAL_PREF, "", "local");
-					consumer.getBgpConfig().getRuleStore().addLocalRib(rule);
+					if(!isEstablished){
+						consumer.setFsmState(FSMState.ESTABLISHED);
+						log.info("C("+listen.getLocalAddress().toString()+")  in ESTABLISHED state with " + listen.getRemoteSocketAddress().toString());
+						this.isEstablished = true;
+					}
 					break;
-			case 1: log.info("Open Packet");
-					consumer.setFsmState(FSMState.OPEN_CONFIRM);
-					toSendOPEN(inputStream, outputStream, log, listen.getLocalAddress().toString());
+			case 1: consumer.setFsmState(FSMState.OPEN_CONFIRM);
+					String asNumber = consumer.getBgpConfig().getRouterName();
+					destinationAddress = listen.getRemoteSocketAddress().toString().split(":")[0].replaceAll("\\/", "");
+					toSendOPEN(inputStream, outputStream, log, destinationAddress, asNumber);
 					consumer.setFsmState(FSMState.OPEN_SENT);
+					BgpOpenPacket op = new BgpOpenPacket(packRest);
+					this.nameOfRouterConnectedTo = ""+op.getAsNumber();
 					kaSender.start();
 					this.kaTimer.resetCounter();
 					countOpen++;
 					break;
-			case 2: log.info("Update Packet");
-					toSendUpdate(inputStream, outputStream, log);
+			case 2: countUpdate++;
 					BgpUpdatePacket packet = new BgpUpdatePacket(packRest);
-					consumer.getBgpConfig().getRuleStore().addAdjRibIn(packet.getRule("in"));
-					countUpdate++;
+					consumer.getBgpConfig().getRuleStore().addRule(packet.getRule(this.nameOfRouterConnectedTo));
 					break;
-			case 3: log.info("Notificaiton Packet");
-					toSendNotification(inputStream, outputStream, log);
+			case 3: toSendNotification(inputStream, outputStream, log);
 					countNotification++;
 					break;
-			default:log.info("Malformed Packet");
-					countOthers++;
+			default:countOthers++;
 					break;
 		}
 
+	}
+	
+	public void toSendUpdate(BgpUpdatePacket updatePacket){
+		super.toSendUpdate(updatePacket.prepareUpdateSegment(), this.inputStream, this.outputStream, BgpProducer.log);
 	}
 
 	/**
@@ -136,6 +161,13 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 	 */
 	public BgpProducer getBgpProducer() {
 		return bgpProducer;
+	}
+
+	/**
+	 * @return the consumer
+	 */
+	public BgpConsumer getConsumer() {
+		return consumer;
 	}
 
 	public int getCountKA(){
@@ -176,6 +208,7 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 			setRunning(false);
 		} catch (IOException e) {
 			log.error(e.getMessage());
+			e.printStackTrace();
 		}
 		setRunning(false);
 	}

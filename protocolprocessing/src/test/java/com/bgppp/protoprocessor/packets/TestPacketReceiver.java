@@ -13,6 +13,7 @@ import junit.framework.TestCase;
 import com.bgppp.protoprocessor.packet.BgpKeepalivePacket;
 import com.bgppp.protoprocessor.packet.BgpOpenPacket;
 
+import java.nio.ByteBuffer;
 /**
  * Run this case with the wireshark running and you should be able to see packets.
  * Just to assist in analyzing all the packets being created. 
@@ -86,7 +87,17 @@ public class TestPacketReceiver extends TestCase{
 							dataInput.read(packRest);
 						}
 						ffByteCount = 0;
-						processPacket(getInt(packLen),getInt(packType),packRest);
+						if(getInt(packType) == 2){ 
+							ByteBuffer b = ByteBuffer.allocate(getInt(packLen));
+							b.put(getMarker());
+							b.put(packLen); 
+							b.put(packType); 
+							b.put(packRest);
+							byte[] totalPacket = new byte[getInt(packLen)];
+							processPacket(getInt(packLen),getInt(packType),totalPacket);
+						}else{
+							processPacket(getInt(packLen),getInt(packType),packRest);
+						}
 					}
 				}
 				System.out.println("-"+response);
@@ -135,7 +146,7 @@ public class TestPacketReceiver extends TestCase{
 		return;
 	}
 
-	public int getInt(byte[] bite){
+	public synchronized int getInt(byte[] bite){
 		String strInt = "";
 		for(int j=bite.length-1;j>-1;j--){
 			if (bite[j]<0)
@@ -146,4 +157,14 @@ public class TestPacketReceiver extends TestCase{
 		Integer r = new Integer(strInt);
 		return r.intValue();
 	}
+	
+	public synchronized byte[] getMarker(){
+		byte[] marker = new byte[16];
+		for(int i=0;i<marker.length;i++){
+			int temp = 255;
+			marker[i] = (byte)temp;
+		}
+		return marker;
+	}   
+
 }

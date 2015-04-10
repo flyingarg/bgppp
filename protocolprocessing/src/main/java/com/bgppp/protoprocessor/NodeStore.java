@@ -60,13 +60,12 @@ public class NodeStore {
 		Long response = new Long("0");
 		String nodes[] = path.split("==>");
 		for(int i=0; i<nodes.length-1; i++){
-			log.info(""+i);
 			try{
 				response+=this.getDistance(NodeStore.getNodeByName(nodes[i]), NodeStore.getNodeByName(nodes[i+1]));
 			}catch(NoPathException exception){
-				log.info(exception.getMessage());
+				log.error(exception.getMessage());
 			}catch(NoNodeException exception){
-				log.info(exception.getMessage());
+				log.error(exception.getMessage());
 			}
 		}
 		return response;

@@ -112,5 +112,4 @@ public class ByteOperations{
 		}
 		return response;
 	}
-
 }

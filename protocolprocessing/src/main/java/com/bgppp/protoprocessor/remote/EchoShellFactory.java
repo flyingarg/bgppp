@@ -125,6 +125,8 @@ public class EchoShellFactory implements Factory<Command> {
 				return commands.ifdel(s, config);
 			}if(s.trim().startsWith("ifls")){
 				return commands.ifls(s, config);
+			}if(s.trim().startsWith("printrule")){
+				return commands.getRule(s, config);
 			}if(s.trim().equals("help")){
 				return "Available Commands : ifadd, ifls, ifdel, linkadd, linkls, help, stats\n";
 			}else{

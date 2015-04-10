@@ -3,6 +3,7 @@ package com.bgppp.protoprocessor.utils;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
+
 import org.apache.log4j.*;
 
 import com.bgppp.protoprocessor.BgpConfig;
@@ -37,6 +38,13 @@ public class ConfigHelper {
 					} catch (Exception exception) {
 						log.error(exception.getMessage());
 					}
+				} else if(parameters[i].trim().matches("[0-9a-zA-Z]*[|][0-9]*.[0-9]*.[0-9]*.[0-9]*")){
+					try{
+						config.addAccessNetwork(parameters[i].trim().split("\\|")[0], parameters[i].trim().split("\\|")[1]);
+					}catch(Exception e){
+						log.error(e.getMessage());
+					}
+
 				}
 			}
 			responseBgpConfigs.put(config.getRouterName(), config);

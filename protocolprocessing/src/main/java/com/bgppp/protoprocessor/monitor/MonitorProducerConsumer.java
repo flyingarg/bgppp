@@ -26,10 +26,6 @@ public class MonitorProducerConsumer extends Thread{
 	 * 3. Get and print the information.
 	 */
 	public void run(){
-	//TODO : Telnet session - print data on requests 
-	//TODO : Live view session
-	//TODO : provide rest api's
-		
 		/*
 		 * Jersey initiation
 		 */
@@ -114,7 +110,6 @@ public class MonitorProducerConsumer extends Thread{
 	}
 
 
-	//TODO : Generate getters and setters, it NEEd rises AT ALL.
 	class ConsumerStats{
 		public String name;
 		public boolean alive;//Has a live with its corresponding peer.

@@ -4,11 +4,13 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
 import org.apache.log4j.*;
+
 import com.bgppp.protoprocessor.graphs.GraphNode;
 import com.bgppp.protoprocessor.utils.AddressAndMask;
 import com.bgppp.protoprocessor.remote.SshServerDaemon;
-import com.bgppp.protoprocessor.rules.RuleStore;
+import com.bgppp.protoprocessor.rules.*;
 
 public class BgpConfig extends GraphNode{
 	public static Logger log = Logger.getLogger(BgpConfig.class.getName());
@@ -17,11 +19,12 @@ public class BgpConfig extends GraphNode{
 	private String routerName;
 	private List<Link> links = new ArrayList<Link>();
 	private HashMap<String, AddressAndMask> addressAndMasks = new HashMap<String, AddressAndMask>();
-	private RuleStore ruleStore = new RuleStore();
+	private RuleStore ruleStore ;
 
 	public BgpConfig(String name) {
 		super(name);
 		this.routerName = name;
+		ruleStore = new RuleStore(this);
 	}
 
 	public String getRouterName() {
@@ -91,7 +94,6 @@ public class BgpConfig extends GraphNode{
 		Link link = new Link(super.getNodeName()+"-"+localAddressName+"-"+remoteAddress.toString().substring(1),""+(links.size()+1)	,source	,remoteAddress);
 		link.setSourceAddressName(localAddressName);
 		this.links.add(link);
-		log.info("Added Link" + link);
 		return link;
 	}
 	
@@ -112,6 +114,7 @@ public class BgpConfig extends GraphNode{
 		ProducerConsumerStore.addNode(this);//Adding Node to ProducerConsumerStore
 		//Start the threads
 		for (Link link : this.getLinks()) {
+			log.info("Creating PnC for link" + link.toString());
 			spwanProducersConsumers(link);
 		}
 		//Start one ssh server on each router!!
@@ -139,7 +142,7 @@ public class BgpConfig extends GraphNode{
 		producer.start();
 		consumer.setBgpProducer(producer);
 	}
-/**
+	/**
 	 * Clean closure of all producers and consumers so that the bgpConfig and all ensuing threads can be cleanly garbage collected.
 	 */
 	public void destroy(){
@@ -153,7 +156,39 @@ public class BgpConfig extends GraphNode{
 		}
 		for(String producerName : getProducers().keySet()){
 			BgpProducer producer = getProducers().get(producerName);
+			log.info("BgpConfig Remove Node ");
 			producer.timeUp();
 		}
+	}
+
+	public void addAccessNetwork(String ifName, String network) throws Exception{
+		log.info("ifName : " + ifName + " Network : " + network);
+		AddressAndMask anm = addressAndMasks.get(ifName);
+		if(anm == null){
+			throw new Exception("In the config-bgp file, accessNetwork must come after the interface is defined");
+		}
+		anm.setAccessNetwork(network);
+		
+		Rule rule = new Rule(
+				network, 
+				new NextHopAttributeType(false, true, false, false,anm.getAddress().toString().split("\\/")[1]), 
+				new AsPathAttributeType(false, true, false, false, "2", "1", getRouterName()), 
+				new OriginAttributeType(false, true, false, false,"0"), 
+				new LocalPrefAttributeType(false, true, false, false,Rule.MAX_LOCAL_PREF), 
+				new MultiExitDiscAttributeType(true, false, false, false,"0"), 
+				"0.0.0.0");
+		ruleStore.addRule(rule);
+	}
+
+	public BgpOperations getBgpOperationsByName(String peerHandlerName) {
+		if(getProducers().get(peerHandlerName) != null){
+			return(BgpOperations)getProducers().get(peerHandlerName);
+		}else if(getConsumers().get(peerHandlerName) != null){
+			return(BgpOperations)getConsumers().get(peerHandlerName).getOneDamnedConThread();
+		}
+		log.error("Got nothing when trying to fetch a con or pro using key : " + peerHandlerName);
+		log.error(getProducers().keySet());
+		log.error(getConsumers().keySet());
+		return null;
 	}
 }

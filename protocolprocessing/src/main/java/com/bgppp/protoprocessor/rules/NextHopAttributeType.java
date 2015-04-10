@@ -57,4 +57,8 @@ public class NextHopAttributeType extends Attribute{
 		return nextHop;
 	}
 
+	public void setNextHop(String nextHop) {
+		this.nextHop = nextHop;
+	}
+
 }

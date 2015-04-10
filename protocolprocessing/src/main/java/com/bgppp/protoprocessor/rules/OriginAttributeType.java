@@ -26,9 +26,9 @@ public class OriginAttributeType extends Attribute{
 	 * @param attrValueLength Feild value length is always 1 in this case. Has to be string though
 	 * @param attrValue Feild values can be of values 0-IGP/1-EGP/2-INCOMPLETE
 	 */
-	public OriginAttributeType(boolean isOptional, boolean isTransitive, boolean isPartial, boolean isExtended, String attrValueLength, String attrValue){
+	public OriginAttributeType(boolean isOptional, boolean isTransitive, boolean isPartial, boolean isExtended, String attrValue){
 		super(isOptional, isTransitive, isPartial, isExtended);
-		this.attrValueLength = attrValueLength;
+		this.attrValueLength = "1";
 		this.attrValue = attrValue;
 	}
 

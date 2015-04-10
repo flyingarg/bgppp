@@ -1,5 +1,6 @@
 package com.bgppp.protoprocessor;
 
+import java.nio.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -9,20 +10,19 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.util.Date;
+import java.util.*;
 
 import org.apache.log4j.*;
 
 import com.bgppp.protoprocessor.timers.*;
 import com.bgppp.protoprocessor.utils.*;
+import com.bgppp.protoprocessor.packet.BgpOpenPacket;
 import com.bgppp.protoprocessor.packet.BgpUpdatePacket;
-import com.bgppp.protoprocessor.rules.*;
 
 public class BgpProducer extends BgpOperations implements TimerListener{
 	public static Logger log = Logger.getLogger(BgpProducer.class.getName());
 	private BgpConfig bgpConfig = null;
 	private Link link = null;
-	private int PORT = GetProperties.bgpPort;
 	private DataOutputStream outputStream = null;
 	private DataInputStream inputStream = null;
 	private boolean isRunning = true;
@@ -32,20 +32,24 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 	public HoldTimer holdTimer = null;
 	private Socket socket = null;
 	private KeepAliveSender kaSender = null;
+	
 	private int totalBgpPackets = 0;
 	private int countKA = 0;
 	private int countOpen = 0;
 	private int countUpdate = 0;
 	private int countOthers = 0;
 	private int countNotification = 0;
-	private FSMState fsmState = null;
+	
+	private FSMState fsmState = FSMState.IDLE;
+	boolean isEstablished = false;
+
+	private String nameOfRouterConnectedTo = "";
+	public String destinationAddress = "";
 	public boolean isRunning() {
 		return isRunning;
 	}
 	public void setRunning(boolean isRunning) {
-		if(!isRunning)this.kaTimer.setRunning(false);
 		this.isRunning = isRunning;
-		setFsmState(FSMState.IDLE);
 	}
 	public BgpProducer(BgpConfig bgpConfig, Link link){
 		this.bgpConfig = bgpConfig;
@@ -54,11 +58,15 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 		this.kaTimer = new KeepAliveTimer(this.getName(), (new Date()).getTime(), this);
 		this.connectRetryTimer = new ConnectRetryTimer("", (new Date()).getTime(), this);
 		this.holdTimer = new HoldTimer("", (new Date()).getTime(), this);
+		this.kaSender = new KeepAliveSender("KAS-"+this.getName());
 	}
 	
 	@Override
 	public void timeUp() {
+		log.info("Terminating Producer " + this.getName());
+		Thread.currentThread().getStackTrace();
 		try {
+			setRunning(false);
 			if(socket != null)
 			socket.close();
 			this.kaTimer.setRunning(false);
@@ -69,38 +77,41 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 		} catch (IOException e) {
 			log.error(e.getMessage());
 		}
-		setRunning(false);
+		setFsmState(FSMState.IDLE);
 	}
 
 	@Override
 	public void run(){
 		setFsmState(FSMState.IDLE);
-		log.info("Starting Producer : " + bgpConfig.getRouterName() + ":" +link);
-		InetSocketAddress inetSocketAddress = new InetSocketAddress(link.getDestinationAddress(), PORT);
-		socket = new Socket();
+		InetSocketAddress inetSocketSource = new InetSocketAddress(link.getSourceAddress(), GetProperties.clientPort);
+		InetSocketAddress inetSocketDestination = new InetSocketAddress(link.getDestinationAddress(), GetProperties.bgpPort);
+		try{
+			socket = new Socket();
+			socket.bind(inetSocketSource);
+		}catch(Exception e){
+			log.error("Socket error : " + e.getMessage());e.printStackTrace();
+		}
 		boolean isConnected = false;
 		boolean bgpOpenCommandProcessed = false;
 		try{
 			int randomInt = ControlledRandom.nextInt(2,10);
-			log.info("Sleeping for " + (randomInt*1000) );
 			BgpProducer.sleep(randomInt * 1000);
 		}catch(InterruptedException e){
 			log.error(e.getMessage());
 		}
 		this.kaTimer.start();
 		while(isRunning()){
-			log.info(isConnected+"/"+bgpOpenCommandProcessed+"/"+link.isAlive());
 			try {
-				if(!isConnected){
-					socket.setSoTimeout(TimeOutUtils.READ_SOMTIMEOUT);
-					log.info("Starting connection");
-					socket.connect(inetSocketAddress);
+				if(!isConnected && socket!=null){
+					socket.setSoTimeout(TimeOutUtils.READ_SO_TIMEOUT);
+					socket.connect(inetSocketDestination);
 					outputStream = new DataOutputStream(socket.getOutputStream());
 					inputStream = new DataInputStream(socket.getInputStream());
-					this.kaSender = new KeepAliveSender("KAS-"+this.getName(),inputStream, outputStream, log);
+					this.kaSender.setInputStream(inputStream);
+					this.kaSender.setOutputStream(outputStream);
 					isConnected = true;
+					log.info("P("+socket.getLocalAddress().toString()+") in CONNECT state " + socket.getRemoteSocketAddress().toString());
 					setFsmState(FSMState.CONNECT);
-					log.info("Connected");
 				}
 			}catch (UnknownHostException e) {
 				log.error("Unknown Host "+e.getMessage());
@@ -123,12 +134,12 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 				e.printStackTrace();
 			}
 			if(isConnected && !bgpOpenCommandProcessed){
-				log.info(socket.getLocalAddress().toString());
-				bgpOpenCommandProcessed = toSendOPEN(inputStream, outputStream, log, socket.getLocalAddress().toString());
+				String asNumber = getName().split("_")[0];
+				destinationAddress = socket.getRemoteSocketAddress().toString().split(":")[0].replaceAll("\\/", "");
+				bgpOpenCommandProcessed = toSendOPEN(inputStream, outputStream, log, destinationAddress, asNumber);
 				setFsmState(FSMState.OPEN_SENT);
 			}
 			if(isConnected && bgpOpenCommandProcessed){
-				log.info("Connected and open command sent");
 				try{
 					byte[] packRest = null;
 					int ffByteCount = 0;
@@ -157,21 +168,32 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 								packRest = new byte[getInt(packLen)-19];
 							inputStream.read(packRest);
 							ffByteCount = 0;
-							processPacket(getInt(packLen),getInt(packType),packRest);
+							if(getInt(packType) == 2 || getInt(packType) == 1){
+								ByteBuffer completePacket = ByteBuffer.allocate(getInt(packLen));
+								completePacket.put(getMarker());
+								completePacket.put(packLen);
+								completePacket.put(packType);
+								completePacket.put(packRest);
+								processPacket(getInt(packLen),getInt(packType),completePacket.array());
+							}else{
+								processPacket(getInt(packLen),getInt(packType),packRest);
+							}
 						}
 					}
-					log.info("CT exited isRunning");
-				}catch(Exception e){ 
+				}catch(Exception e){
+					log.error("parsing packet : " + e.getMessage());
+					e.printStackTrace();
 					timeUp();
 				}
 			}
 		}
 		if(!isRunning()){
-			log.info("Someone set running to false");
+			log.info("P("+link.getSourceAddress().toString()+") to " + link.getDestinationAddress().toString() + " Terminated");
 			try {
 				if(socket!=null)socket.close();
 				if(inputStream!=null)inputStream.close();
 				if(outputStream!=null)outputStream.close();
+				setFsmState(FSMState.IDLE);
 			} catch (IOException e) {
 				log.error("Error closing connections" + e.getMessage());
 			}
@@ -179,60 +201,45 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 	}
 
 	public void processPacket(int packLen,int packType,byte[] packRest){
-		log.info("Packet received, type "+packType+" length "+ packLen);
+		String type="";
+		if(packType == 4)type="KeepAlive";else if(packType == 1)type="Open";else if(packType == 2)type="Update";else if(packType == 3)type="Notification";
+		log.info("Packet received, type "+type+" length "+ packRest.length);
 		switch(packType){
-			case 4: log.info("KeepAlive Packet");
-					countKA++;
+			case 4: countKA++;
 					this.kaTimer.resetCounter();
 					if(!kaSender.isRunning())kaSender.start();
-					setFsmState(FSMState.ESTABLISHED);
-					Rule rule = new Rule(socket.getRemoteSocketAddress()+"", "0.0.0.0", bgpConfig.getRouterName(), "0", Rule.MAX_LOCAL_PREF, "", "local");
-					bgpConfig.getRuleStore().addLocalRib(rule);
+					if(!isEstablished){
+						setFsmState(FSMState.ESTABLISHED);
+						isEstablished = true;
+						log.info("P("+socket.getLocalAddress().toString()+") in ESTABLISHED state " + socket.getRemoteSocketAddress().toString());
+					}
 					break;
-			case 1: log.info("Open Packet");
-					this.kaTimer.resetCounter();
+			case 1: this.kaTimer.resetCounter();
+					BgpOpenPacket op = new BgpOpenPacket(packRest);
+					this.nameOfRouterConnectedTo = "" + op.getAsNumber();
 					if(!kaSender.isRunning())kaSender.start();
 					setFsmState(FSMState.OPEN_CONFIRM);
 					countOpen++;
 					break;
-			case 2: log.info("Update Packet");
+			case 2: countUpdate++;
 					BgpUpdatePacket up = new BgpUpdatePacket(packRest);
-					bgpConfig.getRuleStore().addAdjRibIn(up.getRule("in"));
+					bgpConfig.getRuleStore().addRule(up.getRule(nameOfRouterConnectedTo));
 					countUpdate++;
 					break;
-			case 3: log.info("Notificaiton Packet");
-					countNotification++;
+			case 3: countNotification++;
 					break;
-			default:log.info("Malformed Packet");
-					countOthers++;
+			default:countOthers++;
 					break;
 		}
-
-	}   
-
-/*	private void toSendUPDATE(){
-
-	}
-	private void toSendNOTIFICATION(){
-
 	}
 
-	private String readResponse(DataInputStream inStream){
-		String response = "";
-		try {
-			response = inStream.readLine();
-			return response;
-		} catch(SocketTimeoutException exception){
-			log.info("Waited for SOME response till "+TimeOutUtils.READ_SOMTIMEOUT+" seconds, nothing happened.");
-			setFsmState(FSMState.IDLE);
-			link.setAlive(false);
-			setRunning(false);
-		} catch (IOException e) {
-			log.info(e.getMessage());
-		}
-		return response;
+	public void toSendUpdate(BgpUpdatePacket packet){
+		super.toSendUpdate(packet.prepareUpdateSegment(), this.inputStream, this.outputStream, BgpProducer.log);
 	}
-*/
+	public void addPeer(String s){
+		bgpConfig.getRuleStore().addPeers(s+"=="+this.getName(), (BgpOperations)this);
+	}
+
 	public int getCountKA(){
 		return this.countKA;
 	}
@@ -251,8 +258,15 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 	}   
 
 	public void setFsmState(FSMState fsmState) {
+		if(!this.fsmState.equals(fsmState)){
+			if(fsmState == FSMState.ESTABLISHED){//When first establish happens
+				addPeer(nameOfRouterConnectedTo);
+			}if(FSMState.ESTABLISHED == this.fsmState && FSMState.IDLE == fsmState){//Enters ideal from established, ie connection is lost.
+				getBgpConfig().getRuleStore().removeRulesFrom(link.getDestinationAddress().toString());
+			}
+		}
 		this.fsmState = fsmState;
-	}   
+	}
 
 	public int getCountOthers(){
 		return this.countOthers;
@@ -267,8 +281,4 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 	public BgpConfig getBgpConfig(){
 		return this.bgpConfig;
 	}   
-	public boolean isProducerAlive(){
-		return this.link.isAlive();
-	}
-
 }

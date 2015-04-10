@@ -39,11 +39,12 @@ public class BgpPacketSender extends Thread {
 
 			//We then create a BGP open packet.
 			BgpOpenPacket bgpOpenPacket = new BgpOpenPacket();
-			bgpOpenPacket.setVersion(new Byte[]{Byte.parseByte("4",10)});
-			bgpOpenPacket.setAutonomousSystem(new Byte[]{Byte.parseByte("44",10),Byte.parseByte("66",10)});
-			bgpOpenPacket.setHoldTime(new Byte[]{Byte.parseByte("0",10),Byte.parseByte("5",10)});
-			bgpOpenPacket.setBgpIdentifier(new Byte[]{Byte.parseByte("-2",10),Byte.parseByte("56",10),Byte.parseByte("34",10),Byte.parseByte("12",10),});
+			//bgpOpenPacket.setVersion(new Byte[]{Byte.parseByte("4",10)});
+			bgpOpenPacket.setAsNumber(11111);
+			bgpOpenPacket.setHoldTime(5);
+			bgpOpenPacket.setBgpIdentifier("10.50.2.1");
 			byte[] openPacket = bgpOpenPacket.prepareOpenSegment();
+			BgpOpenPacket test = new BgpOpenPacket(openPacket);
 			dataOutput.write(openPacket, 0, openPacket.length);//We then write the data to the socket.
 
 			//We then create a BGP keepalive packet.
@@ -51,7 +52,8 @@ public class BgpPacketSender extends Thread {
 			byte[] kalivePacket = bgpKalivePacket.prepareKeepAliveSegment();
 			dataOutput.write(kalivePacket, 0, kalivePacket.length);//We then write the data to the socket.
 
-			BgpUpdatePacket upPac = createUpdatePacket();
+			//BgpUpdatePacket upPac = createBgpPacketFromRule();
+			BgpUpdatePacket upPac = createUpdatePacketFromBytes();
 			byte[] updatePacket = upPac.prepareUpdateSegment();
 			dataOutput.write(updatePacket, 0, updatePacket.length);
 
@@ -69,11 +71,12 @@ public class BgpPacketSender extends Thread {
 	}
 
 	private BgpUpdatePacket createUpdatePacket(){
-		OriginAttributeType oat = new OriginAttributeType(false, true, false, false, "1", "0");
-		List<String> ases = new ArrayList<String>();
+		OriginAttributeType oat = new OriginAttributeType(false, true, false, false, "1");
+		/*List<String> ases = new ArrayList<String>();
 		ases.add("65522");
-		ases.add("65511");
-		AsPathAttributeType asat = new AsPathAttributeType(false, true, false, false, "3", "2", ases);
+		ases.add("65511");*/
+		AsPathAttributeType asat = new AsPathAttributeType(false, true, false, false, "3", "2", "6263==2342");
+		asat.addPath("31111", "");
 		NextHopAttributeType nhat = new NextHopAttributeType(false, true, false, false, "10.1.12.1");
 		MultiExitDiscAttributeType medat = new MultiExitDiscAttributeType(true, false, false, false, "0");
 		LocalPrefAttributeType lfa = new LocalPrefAttributeType(false, true, false, false, "100"); 
@@ -92,5 +95,25 @@ public class BgpPacketSender extends Thread {
 		String nlri = "2/8";
 		BgpUpdatePacket p = new BgpUpdatePacket(nlri, attribute, wrPrefixes);
 		return p;
+	}
+
+	private BgpUpdatePacket createBgpPacketFromRule(){
+		String network = "2/8";
+		Rule rule = new Rule(
+				network, 
+				new NextHopAttributeType(false, true, false, false,"10.100.1.1"), 
+				new AsPathAttributeType(false, true, false, false, "2", "1", "23232"), 
+				new OriginAttributeType(false, true, false, false,"1"), 
+				new LocalPrefAttributeType(false, true, false, false,Rule.MAX_LOCAL_PREF), 
+				new MultiExitDiscAttributeType(true, false, false, false,"0"), 
+				"0.0.0.0");
+		return new BgpUpdatePacket(rule);
+	}
+	
+	private BgpUpdatePacket createUpdatePacketFromBytes(){
+		BgpUpdatePacket packet = createUpdatePacket();
+		byte[] bytes = packet.prepareUpdateSegment();
+		BgpUpdatePacket anotherPacket = new BgpUpdatePacket(bytes);
+		return anotherPacket;
 	}
 }

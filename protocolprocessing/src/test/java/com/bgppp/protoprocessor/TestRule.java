@@ -9,7 +9,7 @@ import java.util.*;
 public class TestRule extends TestCase{
 
 	public RuleStore ruleStore = null;
-	public OriginAttributeType o = new OriginAttributeType(false, true, false, false, "1", "1");
+	public OriginAttributeType o = new OriginAttributeType(false, true, false, false, "0");
 
 	@Override
 	public void setUp(){
@@ -94,13 +94,13 @@ public class TestRule extends TestCase{
 		assertEquals(true, o.isBitSet(o.getFlagsAsBytes()[0],6));
 	}
 
-	public void testGeneratePacketFromByte(){
+	/*public void testGeneratePacketFromByte(){
 		BgpUpdatePacket source = createUpdatePacket();
 		BgpUpdatePacket destination = new BgpUpdatePacket(source.prepareUpdateSegment());
 		Rule rule = new Rule(destination);
 		assertNotNull(rule);
 		System.out.println(rule);
-	}
+	}*/
 
 	public void testGetNlriPacket(){
 		String paPrefixes = new String();
@@ -112,7 +112,7 @@ public class TestRule extends TestCase{
 	}
 
 	private BgpUpdatePacket createUpdatePacket(){
-		OriginAttributeType oat = new OriginAttributeType(false, true, false, false, "1", "0");
+		OriginAttributeType oat = new OriginAttributeType(false, true, false, false, "0");
 		List<String> ases = new ArrayList<String>();
 		ases.add("65522");
 		ases.add("65511");

@@ -1,12 +1,10 @@
 package com.bgppp.protoprocessor.rules;
 
-import java.util.*;
-
 public class AsPathAttributeType extends Attribute{
 
 	String pathSegmentType;
 	String pathSegmentLength;
-	List<String> pathSegmentValue;
+	String pathSegmentAsString="";
 
 	public AsPathAttributeType(byte[] bytes) throws Exception{
 		super();
@@ -20,10 +18,10 @@ public class AsPathAttributeType extends Attribute{
 
 		pathSegmentType = getIntegerFromBytes(new byte[]{bytes[3]})+"";
 		pathSegmentLength = getIntegerFromBytes(new byte[]{bytes[4]})+"";
-		pathSegmentValue = new ArrayList<String>();
 		for(int i=0; i<getIntegerFromBytes(new byte[]{bytes[4]}); i++){
-			pathSegmentValue.add(""+getIntegerFromBytes(new byte[]{bytes[5+(i*2)],bytes[6+(i*2)]}));
+			pathSegmentAsString = pathSegmentAsString +"==" +  (""+getIntegerFromBytes(new byte[]{bytes[5+(i*2)],bytes[6+(i*2)]}));
 		}
+		pathSegmentAsString = pathSegmentAsString.replaceFirst("==","");
 	}
 	/**
 	 * First 4 flags are usually 0100.
@@ -33,13 +31,13 @@ public class AsPathAttributeType extends Attribute{
 	 * @param isExtended Is the feild Extended
 	 * @param pathSegmentType Can have possible integer values 1 and 2. These mean AS_SET and AS_SEQUENCE.
 	 * @param pathSegmentLength Contains number of AS(es). If the <code>pathSegmentValue.size() == 2</code> then <code>pathSegmentLength</code> should be set to 2.
-	 * @param pathSegmentValue A <code>List<String> </code> of AS(es). Each string will actually be a number which was encoded in 2 octets.
+	 * @param pathSegmentValue represented as '==' seperated string, the 
 	 */
-	public AsPathAttributeType(boolean isOptional, boolean isTransitive, boolean isPartial, boolean isExtended, String pathSegmentType, String pathSegmentLength, List<String> pathSegmentValue){
+	public AsPathAttributeType(boolean isOptional, boolean isTransitive, boolean isPartial, boolean isExtended, String pathSegmentType, String pathSegmentLength, String pathSegmentAsString){
 		super(isOptional, isTransitive, isPartial, isExtended);
 		this.pathSegmentType = pathSegmentType;
 		this.pathSegmentLength = pathSegmentLength;
-		this.pathSegmentValue = pathSegmentValue;
+		this.pathSegmentAsString = pathSegmentAsString;
 	}
 	
 	@Override
@@ -56,12 +54,11 @@ public class AsPathAttributeType extends Attribute{
 		Byte[] psType = new Byte[]{Byte.parseByte(this.pathSegmentType,10)};//1 octate
 		Byte[] psLength = new Byte[]{Byte.parseByte(this.pathSegmentLength,10)};//1 octate, contains the number of AS(es) each in two octates
 		Byte[] psValue = new Byte[Integer.parseInt(pathSegmentLength)*2];//This is list of AS(es) that the packet has traversed through. 2 bytes are used to specify as AS
+		String[] str = pathSegmentAsString.split("==");
 		for(int i=0; i<Integer.parseInt(pathSegmentLength)*2; i=i+2){
-			byte[] temp = getByteArrayForInteger(Integer.parseInt(pathSegmentValue.get(i/2)),2);
+			byte[] temp = getByteArrayForInteger(Integer.parseInt(str[i/2]),2);
 			psValue[i] = temp[0];
 			psValue[i+1] = temp[1];
-/*			psValue[i+2] = temp[2];
-			psValue[i+3] = temp[3];*/
 			len+=2;
 		}
 		Byte[] totalLength = new Byte[]{Byte.parseByte(""+len,10)};
@@ -69,16 +66,17 @@ public class AsPathAttributeType extends Attribute{
 	}
 
 	public String getPathSegmentType() {
-		return pathSegmentType;
+		return this.pathSegmentType;
 	}
 	public String getPathSegmentLength() {
-		return pathSegmentLength;
+		return this.pathSegmentLength;
 	}
-	public String getPathSegmentValue() {
-		String response = "";
-		for(String path : pathSegmentValue){
-			response = response + path + ",";
-		}
-		return response;
+	public String getPathSegmentAsString(){
+		return this.pathSegmentAsString;
+	}
+	public void addPath(String node, String type){
+		this.pathSegmentAsString = node+"=="+this.pathSegmentAsString;
+		Long l = Long.parseLong(this.pathSegmentLength);
+		this.pathSegmentLength = ""+(l.intValue()+1);
 	}
 }

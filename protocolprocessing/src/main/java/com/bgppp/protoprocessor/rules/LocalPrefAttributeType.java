@@ -36,7 +36,6 @@ public class LocalPrefAttributeType extends Attribute{
 
 	@Override
 	public String getType() {
-		// TODO Auto-generated method stub
 		return "5";
 	}
 
