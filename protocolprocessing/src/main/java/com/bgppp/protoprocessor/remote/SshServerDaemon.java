@@ -29,7 +29,7 @@ public class SshServerDaemon extends Thread{
 			sshd.setPort(PORT);
 			String hostname = config.getLinks().get(0).getSourceAddress().toString().replaceFirst("/","").trim();
 			sshd.setHost(hostname);
-			sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider("/repo/hostkey.ser"));
+			sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider("./../../hostkey.ser"));
 			sshd.setShellFactory(new EchoShellFactory(config));
 			sshd.setCommandFactory(new ScpCommandFactory(new CommandFactory() {
 				public Command createCommand(String command) {
