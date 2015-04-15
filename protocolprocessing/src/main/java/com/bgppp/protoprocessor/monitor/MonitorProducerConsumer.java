@@ -20,16 +20,21 @@ public class MonitorProducerConsumer extends Thread{
 	boolean running = false;
 	private List<ProducerStats> producerStatsList= new ArrayList<ProducerStats>();
 	private List<ConsumerStats> consumerStatsList= new ArrayList<ConsumerStats>();
+	private int HTTP_PORT;
 	/*
 	 * 1. Get producers and consumers hash from the StoreProducerConsumer.
 	 * 2. Iterate through the each producer and consumer.
 	 * 3. Get and print the information.
 	 */
+
+	public MonitorProducerConsumer(int port){
+		this.HTTP_PORT = port;
+	}
 	public void run(){
 		/*
 		 * Jersey initiation
 		 */
-		Server jettyServer = new Server(8787);
+		Server jettyServer = new Server(HTTP_PORT);
 		
 		ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		context.setContextPath("/");

@@ -46,7 +46,7 @@ public class NodeStore {
 			throw new NoNodeException(from);
 		if(getNodeByName(to.getNodeName()) == null)
 			throw new NoNodeException(to);
-		for(GraphPath path : from.getPaths()){
+		for(GraphPath path : from.getNetworkPath()){
 			if(path.getNode().getNodeName().equals(to.getNodeName())){
 				distance+=path.getWeight();
 				pathfound=true;

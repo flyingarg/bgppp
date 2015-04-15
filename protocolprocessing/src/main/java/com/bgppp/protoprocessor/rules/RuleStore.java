@@ -159,7 +159,6 @@ public class RuleStore{
 
 	public BgpOperations doesPeerExist(String rcvFrom){
 		for(String peer : this.peers.keySet()){
-			System.out.println(rcvFrom+"==================="+peer);
 			String s = peer.split("==")[0];
 			if(rcvFrom.equals(s)){
 				log.info("FOUND A PEER AND RETURNING IT");

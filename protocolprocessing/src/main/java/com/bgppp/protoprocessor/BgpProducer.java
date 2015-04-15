@@ -261,6 +261,8 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 		if(!this.fsmState.equals(fsmState)){
 			if(fsmState == FSMState.ESTABLISHED){//When first establish happens
 				addPeer(nameOfRouterConnectedTo);
+				this.link.setDestinationId(nameOfRouterConnectedTo);
+				this.link.setAlive(true);
 			}if(FSMState.ESTABLISHED == this.fsmState && FSMState.IDLE == fsmState){//Enters ideal from established, ie connection is lost.
 				getBgpConfig().getRuleStore().removeRulesFrom(link.getDestinationAddress().toString());
 			}

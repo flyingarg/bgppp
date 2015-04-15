@@ -2,11 +2,11 @@ package com.bgppp.protoprocessor;
 
 import java.net.InetAddress;
 
-import com.bgppp.protoprocessor.graphs.GraphPath;
+import com.bgppp.protoprocessor.graphs.*;
 
 public class Link extends GraphPath{
-	public Link(String pathName, String pathId, InetAddress source, InetAddress destination) {
-		super(pathName, pathId, source.toString().substring(1), destination.toString().substring(1));
+	public Link(String pathName, String pathId, InetAddress source, InetAddress destination, String routerName) {
+		super(pathName, pathId, routerName, "", "#F00");
 		this.sourceAddress = source;
 		this.destinationAddress = destination;
 		//this.destinationAddressName =  destination.toString().substring(1);
@@ -61,8 +61,6 @@ public class Link extends GraphPath{
 		response += "sourceAddress:"+sourceAddress;
 		response += ",sourceAddressName:"+sourceAddressName;
 		response += ",destinationAddress:"+destinationAddress;
-		response += ",pathId:"+super.getPathId();
-		response += ",pathName:"+super.getPathName();
 		return response;
 	}
 }

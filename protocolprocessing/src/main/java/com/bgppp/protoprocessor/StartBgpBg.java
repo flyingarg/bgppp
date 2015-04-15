@@ -19,10 +19,16 @@ public class StartBgpBg {
 
 	public static Logger log = Logger.getLogger(StartBgpBg.class.getName());
 	static WrappedHash<String,BgpConfig> routers = new WrappedHash<String,BgpConfig>();
+	private static int HTTP_PORT = 8787;
 	public static void main(String args[]) {
 		try {
 			Thread thread = new MainThread();
 			BasicConfigurator.configure();
+			if(args.length == 1){
+				System.out.println("++++");
+				Long l = Long.parseLong(args[0]);
+				HTTP_PORT = l.intValue();
+			}
 			thread.start();
 		} catch (Exception exception) {
 			exception.printStackTrace();
@@ -80,7 +86,7 @@ public class StartBgpBg {
 					e.printStackTrace();
 				}
 			}
-			MonitorProducerConsumer monitor = new MonitorProducerConsumer();
+			MonitorProducerConsumer monitor = new MonitorProducerConsumer(HTTP_PORT);
 			monitor.start();
 			while (true) {
 				// Checking file modification and saving configuration

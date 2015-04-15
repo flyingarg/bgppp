@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.apache.log4j.*;
 
-import com.bgppp.protoprocessor.graphs.GraphNode;
+import com.bgppp.protoprocessor.graphs.*;
 import com.bgppp.protoprocessor.utils.AddressAndMask;
 import com.bgppp.protoprocessor.remote.SshServerDaemon;
 import com.bgppp.protoprocessor.rules.*;
@@ -22,7 +22,7 @@ public class BgpConfig extends GraphNode{
 	private RuleStore ruleStore ;
 
 	public BgpConfig(String name) {
-		super(name);
+		super(name, "50", "#000");
 		this.routerName = name;
 		ruleStore = new RuleStore(this);
 	}
@@ -91,7 +91,7 @@ public class BgpConfig extends GraphNode{
 			}
 		}
 		InetAddress source = getAddressAndMaskByName(localAddressName).getAddress();
-		Link link = new Link(super.getNodeName()+"-"+localAddressName+"-"+remoteAddress.toString().substring(1),""+(links.size()+1)	,source	,remoteAddress);
+		Link link = new Link(super.getNodeName()+"-"+localAddressName+"-"+remoteAddress.toString().substring(1),""+(links.size()+1)	,source	,remoteAddress,getRouterName());
 		link.setSourceAddressName(localAddressName);
 		this.links.add(link);
 		return link;
@@ -177,6 +177,10 @@ public class BgpConfig extends GraphNode{
 				new LocalPrefAttributeType(false, true, false, false,Rule.MAX_LOCAL_PREF), 
 				new MultiExitDiscAttributeType(true, false, false, false,"0"), 
 				"0.0.0.0");
+		GraphNode net = new GraphNode(network, "25", "#F00");
+		addNetwork(net);
+		GraphPath path = new GraphPath(network+"-"+getRouterName(), network+"-"+getRouterName(), getRouterName(), network, "#F00");
+		addPath(path);
 		ruleStore.addRule(rule);
 	}
 

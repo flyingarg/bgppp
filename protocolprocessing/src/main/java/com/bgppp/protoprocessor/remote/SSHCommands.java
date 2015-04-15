@@ -14,7 +14,6 @@ public class SSHCommands{
 
 	public String stats(BgpConfig config){
 		String response = "";
-		System.out.println("No of Configurs : " + ProducerConsumerStore.getBgpConfigMap().size());
 		if(ProducerConsumerStore.hasNewUpdates()){
 			for(String key : ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().keySet()){
 				String name = ProducerConsumerStore.getBgpConfigByName(config.getRouterName()).getProducers().get(key).getName();

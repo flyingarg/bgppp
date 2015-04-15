@@ -53,8 +53,8 @@ public class GraphUtils {
 	
 	@SuppressWarnings("unchecked")
 	public void tracePath2(Stack<GraphNode> nodesInPath, GraphNode currentNode){
-		log.info(nodesInPath.hashCode()+"NodesInPath=" + nodesInPath + "; currentNode=" + currentNode + ";Paths=" + currentNode.getPaths());
-		for(GraphPath branch : currentNode.getPaths()){
+		log.info(nodesInPath.hashCode()+"NodesInPath=" + nodesInPath + "; currentNode=" + currentNode + ";Paths=" + currentNode.getNetworkPath());
+		for(GraphPath branch : currentNode.getNetworkPath()){
 			log.info("From " + currentNode + " to => " + branch.getNode() );
 			if(branch.equals(currentNode)){
 				log.info("Current");

@@ -14,11 +14,13 @@ import com.bgppp.protoprocessor.FSMState;
 import com.bgppp.protoprocessor.ProducerConsumerStore;
 import com.bgppp.protoprocessor.Link;
 
+import com.bgppp.protoprocessor.graphs.*;
+
 import org.apache.log4j.*;
 
 @Path("/bgppp")
 public class Stats{
-	
+
 	public static final Logger log = Logger.getLogger(Stats.class);
 	@GET
 	@Path("/stats/{routerName}")
@@ -29,26 +31,40 @@ public class Stats{
 			JSONArray nodeArray = new JSONArray();
 			JSONArray verticesArray = new JSONArray();
 			for(String key : ProducerConsumerStore.getHashStore().keySet()){
-				if(ProducerConsumerStore.getHashStore().get(key).getNodeName().contains(routerName) || routerName.equals("all")){
+				GraphNode node = ProducerConsumerStore.getHashStore().get(key);
+				if(node.getNodeName().contains(routerName) || routerName.equals("all")){
 					jsonobject = new JSONObject();
-					jsonobject.put("id",ProducerConsumerStore.getHashStore().get(key).getId());
-					jsonobject.put("name",ProducerConsumerStore.getHashStore().get(key).getNodeName());
+					jsonobject.put("id",node.getId());
+					jsonobject.put("name",node.getNodeName());
+					jsonobject.put("size", Integer.parseInt(node.getSize()));
+					jsonobject.put("color", node.getColor());
 					nodeArray.put(jsonobject);
+					for(GraphNode n : node.getNetwork()){
+						JSONObject jo = new JSONObject();
+						jo.put("id",n.getId());
+						jo.put("name",n.getNodeName());
+						jo.put("size", Integer.parseInt(n.getSize()));
+						jo.put("color", n.getColor());
+						nodeArray.put(jo);
+					}
+					for(GraphPath p : node.getNetworkPath()){
+						JSONObject po = new JSONObject();
+						po.put("id",p.getPathId());
+						po.put("name",p.getPathName());
+						po.put("source",p.getSourceId());
+						po.put("target",p.getDestinationId());
+						po.put("color",p.getColor());
+						verticesArray.put(po);
+					}
 				}
 			}
 
 			for(String key : ProducerConsumerStore.getPathStore().keySet()){
-				log.info("path store key"+key);
-			}
-			for(String key : ProducerConsumerStore.getHashStore().keySet()){
-				log.info("node store key"+key);
-			}
-
-			for(String key : ProducerConsumerStore.getPathStore().keySet()){
-				if((ProducerConsumerStore.getPathStore().get(key).getPathName()).contains(routerName) || routerName.equals("all")){
+				GraphPath path = ProducerConsumerStore.getPathStore().get(key);
+				if((path.getPathName()).contains(routerName) || routerName.equals("all")){
 					//We check if these paths are infact instance of a link, which it should be and hence it makes it safe to typecast
-					if(ProducerConsumerStore.getPathStore().get(key) instanceof Link){
-						Link link = (Link)ProducerConsumerStore.getPathStore().get(key);
+					if(path instanceof Link){
+						Link link = (Link)path;
 						//We then get the consumer from the ProducerConsumerStore using the link and check if the consumer is in ESTABLISHED state. If yes, it means
 						//that that particular link between two routers is ACTIVE and processing BGP messages.
 						BgpConsumer consumer = ProducerConsumerStore.getConsumerOfLink(link);
@@ -56,10 +72,11 @@ public class Stats{
 							continue;
 					}
 					jsonobject = new JSONObject();
-					jsonobject.put("id",ProducerConsumerStore.getPathStore().get(key).getId());
-					jsonobject.put("source",ProducerConsumerStore.getPathStore().get(key).getSourceId());
-					jsonobject.put("target",ProducerConsumerStore.getPathStore().get(key).getDestinationId());
-					jsonobject.put("name",ProducerConsumerStore.getPathStore().get(key).getPathName());
+					jsonobject.put("id",path.getPathId());
+					jsonobject.put("name",path.getPathName());
+					jsonobject.put("source",path.getSourceId());
+					jsonobject.put("target",path.getDestinationId());
+					jsonobject.put("color",path.getColor());
 					verticesArray.put(jsonobject);
 				}
 			}
@@ -68,7 +85,7 @@ public class Stats{
 			response.put("nodes", nodeArray);
 			return  response.toString();
 		}catch(Exception e){
-			System.out.println("Exception in json stuff : " + e.getMessage());
+			log.error("Exception in json stuff : " + e.getMessage());
 			e.printStackTrace();
 			return "--";
 		}

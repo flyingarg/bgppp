@@ -21,6 +21,7 @@ public class BgpConsumer extends Thread {
 	public HashMap<String, BgpConsumerThread> connsFromPeers = new HashMap<String, BgpConsumerThread>();
 	private FSMState fsmState = FSMState.IDLE;
 	private ServerSocket serverSocket = null;
+	
 	public boolean isRunning() {
 		return isRunning;
 	}
@@ -104,6 +105,8 @@ public class BgpConsumer extends Thread {
 		if(!this.fsmState.equals(fsmState)){
 			if(fsmState == FSMState.ESTABLISHED){
 				addPeer(getOneDamnedConThread().nameOfRouterConnectedTo);
+				link.setDestinationId(getOneDamnedConThread().nameOfRouterConnectedTo);
+				link.setAlive(true);
 			}if(FSMState.ESTABLISHED == this.fsmState && FSMState.IDLE == fsmState){
 				getBgpConfig().getRuleStore().removeRulesFrom(link.getDestinationAddress().toString());
 			}
