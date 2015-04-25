@@ -139,7 +139,7 @@ function graphInit(){
 //use http://127.0.0.1:8787/bgppp/stats/R1 to get details of the router R1, one can also just paste these url's on the browser and check the output. !!
 function onLoadHere(){
 	$.ajax({
-		url: 'http://127.0.0.1:8787/bgppp/stats/all',
+		url: '../bgppp/graphs/'+getParameter('name'),
 		async: false,
 		dataType: 'json',
 		success: function (data) {
@@ -148,6 +148,17 @@ function onLoadHere(){
 	});
 	graphInit();
 }
+function getParameter(param){
+	var localUrl = window.location.search.substring(1);
+	var paramArray = localUrl.split('&');
+	for (var i = 0; i < paramArray.length; i++) {
+		var paramName = paramArray[i].split('=');
+		if (paramName[0] == param) {
+			return paramName[1];
+		}
+	}
+}
+
 </script>
 </body>
 </html>

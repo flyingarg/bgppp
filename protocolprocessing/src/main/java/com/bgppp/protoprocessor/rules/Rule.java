@@ -1,9 +1,14 @@
 package com.bgppp.protoprocessor.rules;
 
+//import org.apache.log4j.Logger;
+
+
 //import com.bgppp.protoprocessor.packet.BgpUpdatePacket;
 
 public class Rule{
-	private String type; //Withdrawn routes or path attributes.
+	//private static final Logger log = Logger.getLogger(Rule.class);
+
+	private RuleType type; //Withdrawn routes or path attributes.
 	
 	private String network;
 	private NextHopAttributeType nextHop;
@@ -12,14 +17,15 @@ public class Rule{
 	//private String weight;
 	private AsPathAttributeType path;//Added locally by the admin, MAYBE
 	private OriginAttributeType origin;
-	private String peerHandlerName;
+	private String ruleSender;
 	private String wrPrefix;
+	private String bgpOperationName;
     public static String MAX_LOCAL_PREF = "131071";
 
 	public Rule(){
 	}
 	public Rule(String network, NextHopAttributeType nextHop, AsPathAttributeType path, OriginAttributeType origin, 
-			LocalPrefAttributeType localPref, MultiExitDiscAttributeType metric, String rcvFromPeer){
+			LocalPrefAttributeType localPref, MultiExitDiscAttributeType metric, String ruleSender, String bgpOperationName){
 		this.network = network;
 		this.nextHop = nextHop;
 		this.path = path;
@@ -27,31 +33,35 @@ public class Rule{
 		this.localPref = localPref;
 		this.metric = metric;
 		//this.type = type;
-		this.peerHandlerName = rcvFromPeer;
+		this.ruleSender = ruleSender;
+		this.bgpOperationName = bgpOperationName;
 	}
 
 	public String toString(){
-		return
-			"Network:"+network+
-			"\nNextHop:"+nextHop.getNextHop()+
-			"\nLocalPref:"+localPref.getLocalPref()+
-			"\nOrigin:"+origin.getAttrValue()+
-			"\nPath:"+path.getPathSegmentType()+"|"+path.getPathSegmentAsString()+
-			"\nMetric:"+metric.getMultiExitDiscriminator()+
-			"\nReceivedFrom:"+getPeerHandlerName();
+		String response = "";
+			response+="Network:"+network;
+			response+="\nNextHop:"+(nextHop!=null?nextHop.getNextHop():"");
+			response+="\nLocalPref:"+(localPref!=null?localPref.getLocalPref():"");
+			response+="\nOrigin:"+(origin!=null?origin.getAttrValue():"");
+			response+="\nPath:"+(path!=null?path.getPathSegmentType():"");
+			response+=(path!=null?path.getPathSegmentAsString():"");
+			response+="\nMetric:"+(metric!=null?metric.getMultiExitDiscriminator():"");
+			response+="\nReceivedFrom:"+(getRuleSenderName());
+			//log.info(response);
+			return response;
 	}
 
 	/**
 	 * @return the type
 	 */
-	public String getType() {
+	public RuleType getType() {
 		return type;
 	}
 
 	/**
 	 * @param type the type to set
 	 */
-	public void setType(String type) {
+	public void setType(RuleType type) {
 		this.type = type;
 	}
 
@@ -142,15 +152,15 @@ public class Rule{
 	/**
 	 * @return the rcvFromPeer
 	 */
-	public String getPeerHandlerName() {
-		return peerHandlerName;
+	public String getRuleSenderName() {
+		return ruleSender;
 	}
 
 	/**
-	 * @param rcvFromPeer the rcvFromPeer to set
+	 * @param ruleSender the rcvFromPeer to set
 	 */
-	public void setPeerHandlerName(String rcvFromPeer) {
-		this.peerHandlerName = rcvFromPeer;
+	public void setRuleSenderName(String ruleSender) {
+		this.ruleSender = ruleSender;
 	}
 
 	/**
@@ -165,5 +175,19 @@ public class Rule{
 	 */
 	public void setWrPrefix(String wrPrefix) {
 		this.wrPrefix = wrPrefix;
+	}
+
+	/**
+	 * @return the bgpOperationName
+	 */
+	public String getBgpOperationName() {
+		return bgpOperationName;
+	}
+
+	/**
+	 * @param bgpOperationName the bgpOperationName to set
+	 */
+	public void setBgpOperationName(String bgpOperationName) {
+		this.bgpOperationName = bgpOperationName;
 	}
 }

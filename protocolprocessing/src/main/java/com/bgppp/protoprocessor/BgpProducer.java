@@ -116,22 +116,26 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 			}catch (UnknownHostException e) {
 				log.error("Unknown Host "+e.getMessage());
 				e.printStackTrace();
+				timeUp();
 			} catch(SocketTimeoutException exception){
 				log.error("No response from " + link.getDestinationAddress());
 				link.setAlive(false);
+				timeUp();
 			} catch(ConnectException exception){
 				try {
 					log.error("Could not connect to " + link.getDestinationAddress());
 					isConnected = false;
 					link.setAlive(false);
 					Thread.sleep(TimeOutUtils.RECONNECT_TIME);
+					timeUp();
 				} catch (InterruptedException e) {
 					log.error("Interrupter " + e.getMessage());
 					e.printStackTrace();
 				}
 			} catch (IOException e) {
-				log.error(e.getMessage());
+				log.error("IOException : " + e.getMessage());
 				e.printStackTrace();
+				timeUp();
 			}
 			if(isConnected && !bgpOpenCommandProcessed){
 				String asNumber = getName().split("_")[0];
@@ -213,6 +217,7 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 						isEstablished = true;
 						log.info("P("+socket.getLocalAddress().toString()+") in ESTABLISHED state " + socket.getRemoteSocketAddress().toString());
 					}
+					log.info("1");
 					break;
 			case 1: this.kaTimer.resetCounter();
 					BgpOpenPacket op = new BgpOpenPacket(packRest);
@@ -223,7 +228,8 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 					break;
 			case 2: countUpdate++;
 					BgpUpdatePacket up = new BgpUpdatePacket(packRest);
-					bgpConfig.getRuleStore().addRule(up.getRule(nameOfRouterConnectedTo));
+					String bgpOperationName = nameOfRouterConnectedTo+"=="+this.getName();
+					bgpConfig.getRuleStore().addRule(up.getRule(nameOfRouterConnectedTo, bgpOperationName));
 					countUpdate++;
 					break;
 			case 3: countNotification++;
@@ -264,7 +270,7 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 				this.link.setDestinationId(nameOfRouterConnectedTo);
 				this.link.setAlive(true);
 			}if(FSMState.ESTABLISHED == this.fsmState && FSMState.IDLE == fsmState){//Enters ideal from established, ie connection is lost.
-				getBgpConfig().getRuleStore().removeRulesFrom(link.getDestinationAddress().toString());
+				getBgpConfig().getRuleStore().removeRulesFrom(nameOfRouterConnectedTo+"=="+this.getName());
 			}
 		}
 		this.fsmState = fsmState;

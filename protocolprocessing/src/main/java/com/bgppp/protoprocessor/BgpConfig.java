@@ -176,7 +176,9 @@ public class BgpConfig extends GraphNode{
 				new OriginAttributeType(false, true, false, false,"0"), 
 				new LocalPrefAttributeType(false, true, false, false,Rule.MAX_LOCAL_PREF), 
 				new MultiExitDiscAttributeType(true, false, false, false,"0"), 
+				"0.0.0.0",
 				"0.0.0.0");
+		rule.setType(RuleType.ADDRULE);
 		GraphNode net = new GraphNode(network, "25", "#F00");
 		addNetwork(net);
 		GraphPath path = new GraphPath(network+"-"+getRouterName(), network+"-"+getRouterName(), getRouterName(), network, "#F00");

@@ -107,16 +107,13 @@ public class TestRule extends TestCase{
 		paPrefixes = "2/8";
 		BgpUpdatePacket up = new BgpUpdatePacket();
 		Byte[] set1 = up.getPrefixPacket(paPrefixes);
-		Byte[] test1 = new Byte[]{(byte)2, (byte)8};
+		Byte[] test1 = new Byte[]{(byte)8, (byte)2};
 		assertTrue(Arrays.equals(set1, test1));
 	}
 
 	private BgpUpdatePacket createUpdatePacket(){
 		OriginAttributeType oat = new OriginAttributeType(false, true, false, false, "0");
-		List<String> ases = new ArrayList<String>();
-		ases.add("65522");
-		ases.add("65511");
-		AsPathAttributeType asat = new AsPathAttributeType(false, true, false, false, "3", "2", ases);
+		AsPathAttributeType asat = new AsPathAttributeType(false, true, false, false, "3", "2", "65522==65511");
 		NextHopAttributeType nhat = new NextHopAttributeType(false, true, false, false, "10.1.12.1");
 		MultiExitDiscAttributeType medat = new MultiExitDiscAttributeType(true, false, false, false, "0");
 		LocalPrefAttributeType lfa = new LocalPrefAttributeType(false, true, false, false, "100"); 
@@ -141,7 +138,7 @@ public class TestRule extends TestCase{
 		BgpUpdatePacket up = new BgpUpdatePacket();
 		System.out.println(up.stringFromPrefix(new byte[]{(byte)2, (byte)8}));
 		System.out.println(up.stringFromPrefix(new byte[]{(byte)2, (byte)5, (byte)16}));
-		assertEquals("2.0.0.0/8",up.stringFromPrefix(new byte[]{(byte)2, (byte)8}));
-		assertEquals("2.5.0.0/16",up.stringFromPrefix(new byte[]{(byte)2, (byte)5, (byte)16}));
+		assertEquals("2/8",up.stringFromPrefix(new byte[]{(byte)8, (byte)2}));
+		assertEquals("2.5/16",up.stringFromPrefix(new byte[]{(byte)16, (byte)2, (byte)5}));
 	}
 }

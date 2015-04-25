@@ -53,7 +53,7 @@ public class BgpPacketSender extends Thread {
 			dataOutput.write(kalivePacket, 0, kalivePacket.length);//We then write the data to the socket.
 
 			//BgpUpdatePacket upPac = createBgpPacketFromRule();
-			BgpUpdatePacket upPac = createUpdatePacketFromBytes();
+			BgpUpdatePacket upPac = createUpdatePacket();
 			byte[] updatePacket = upPac.prepareUpdateSegment();
 			dataOutput.write(updatePacket, 0, updatePacket.length);
 
@@ -91,8 +91,8 @@ public class BgpPacketSender extends Thread {
 		attribute.add(lfa);
 //		attribute.add(aaat);
 //		attribute.add(aat);
-		String wrPrefixes = "";
-		String nlri = "2/8";
+		String wrPrefixes = "2.1/16";
+		String nlri = "";
 		BgpUpdatePacket p = new BgpUpdatePacket(nlri, attribute, wrPrefixes);
 		return p;
 	}

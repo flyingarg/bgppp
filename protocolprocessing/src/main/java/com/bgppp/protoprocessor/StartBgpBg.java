@@ -25,7 +25,7 @@ public class StartBgpBg {
 			Thread thread = new MainThread();
 			BasicConfigurator.configure();
 			if(args.length == 1){
-				System.out.println("++++");
+				System.out.println("Entering Simulated Mode");
 				Long l = Long.parseLong(args[0]);
 				HTTP_PORT = l.intValue();
 			}

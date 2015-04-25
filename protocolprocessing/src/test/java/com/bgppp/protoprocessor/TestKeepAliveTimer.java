@@ -43,7 +43,7 @@ class MockKeepAliveSender extends KeepAliveSender{
 	
 	public MockKeepAliveSender(String name, DataInputStream inputStream,
 			DataOutputStream outputStream, Logger log, KeepAliveTimer kaTimer) {
-		super(name, inputStream, outputStream, log);
+		super(name);
 		this.kaTimer = kaTimer;
 	}
 	

@@ -25,26 +25,36 @@ public class BgpUpdatePacket extends BgpHeader{
 	/**
 	 */
 	public BgpUpdatePacket(Rule rule){
-		this.paPrefixes = rule.getNetwork();
-		List<Attribute> atr = new ArrayList<Attribute>();
-		atr.add(rule.getNextHop());
-		atr.add(rule.getMetric());
-		atr.add(rule.getLocalPref());
-		atr.add(rule.getOrigin());
-		atr.add(rule.getPath());
-		this.paAttributes = atr;
-		this.wrPrefixes = rule.getWrPrefix();
+		if(RuleType.ADDRULE == rule.getType()){
+			this.paPrefixes = rule.getNetwork();
+			List<Attribute> atr = new ArrayList<Attribute>();
+			atr.add(rule.getNextHop());
+			atr.add(rule.getMetric());
+			atr.add(rule.getLocalPref());
+			atr.add(rule.getOrigin());
+			atr.add(rule.getPath());
+			this.paAttributes = atr;
+			this.wrPrefixes = rule.getWrPrefix();
+		}else if(RuleType.WITHDRAWRULE == rule.getType()){
+			this.wrPrefixes = rule.getNetwork();
+			this.paAttributes = new ArrayList<Attribute>();
+			this.paPrefixes = "";
+		}
 	}
 	/**
 	 * Create a BgpUpdatePacket. This would create an object that can be used to generate the byte[] response using the <code>byte[] prepareUpdateSegment()</code> method.
+	 * Also note that if wrPrefix is not null or empty, then the other feilds will not be accepted.
 	 * @param paPrefixes Enter paPrefix of the for <code>2/8</code> or <code>2.5/16</code>. These translate to prefixes <code>2.0.0.0/8 and 2.5.0.0/16</code>
 	 * @param paAttributes Enter a list of attributes.
 	 * @param wrPrefixes Enter wrPrefix of the for <code>2/8</code> or <code>2.5/16</code>. These translate to prefixes <code>2.0.0.0/8 and 2.5.0.0/16</code>
 	 */
 	public BgpUpdatePacket(String paPrefixes, List<Attribute> paAttributes, String wrPrefixes){
-		this.paPrefixes = paPrefixes;
-		this.wrPrefixes = wrPrefixes;
-		this.paAttributes = paAttributes;
+		if(wrPrefixes == null || "".equals(wrPrefixes)){
+			this.paPrefixes = paPrefixes;
+			this.paAttributes = paAttributes;
+		}else{
+			this.wrPrefixes = wrPrefixes;
+		}
 	}
 
 	/**
@@ -67,22 +77,24 @@ public class BgpUpdatePacket extends BgpHeader{
 		}
 		byte[] wrLength = new byte[2]; buffer.get(wrLength);
 		int withdrawrouteLength = getIntegerFromBytes(wrLength);
-		byte[] withdrawroute = new byte[withdrawrouteLength];buffer.get(withdrawroute);
-		this.wrPrefixes = stringFromPrefix(withdrawroute);
-
-		byte[] paLength = new byte[2]; buffer.get(paLength);
-		int totalAttributesLength  = buffer.position() + getIntegerFromBytes(paLength);
-		while(buffer.position() < totalAttributesLength){
-			int currentPosition = buffer.position();
-			int paAttrLength = 3 + getIntegerFromBytes(new byte[]{buffer.get(currentPosition+2)});
-			buffer.position(currentPosition);
-			byte[] tempAttrBuffer = new byte[paAttrLength];
-			buffer.get(tempAttrBuffer);
-			Attribute attr = constructAttributeFromByte(tempAttrBuffer);
-			this.paAttributes.add(attr);
+		if(withdrawrouteLength == 0){
+			byte[] paLength = new byte[2]; buffer.get(paLength);
+			int totalAttributesLength  = buffer.position() + getIntegerFromBytes(paLength);
+			while(buffer.position() < totalAttributesLength){
+				int currentPosition = buffer.position();
+				int paAttrLength = 3 + getIntegerFromBytes(new byte[]{buffer.get(currentPosition+2)});
+				buffer.position(currentPosition);
+				byte[] tempAttrBuffer = new byte[paAttrLength];
+				buffer.get(tempAttrBuffer);
+				Attribute attr = constructAttributeFromByte(tempAttrBuffer);
+				this.paAttributes.add(attr);
+			}
+			byte[] nlri = new byte[bytes.length - buffer.position()]; buffer.get(nlri);
+			this.paPrefixes = stringFromPrefix(nlri);
+		}else{
+			byte[] withdrawroute = new byte[withdrawrouteLength];buffer.get(withdrawroute);
+			this.wrPrefixes = stringFromPrefix(withdrawroute);
 		}
-		byte[] nlri = new byte[bytes.length - buffer.position()]; buffer.get(nlri);
-		this.paPrefixes = stringFromPrefix(nlri);
 	}
 
 	/**
@@ -94,18 +106,23 @@ public class BgpUpdatePacket extends BgpHeader{
 		//Withdrwal routes length
 		Byte[] wrLength = new Byte[2];
 		Byte[] wrPacket = new Byte[0];
-		int wrlen = this.wrPrefixes == null || this.wrPrefixes.equals("") ? 0 : 2;
+		int wrlen = 0;
+		if(this.wrPrefixes == null || this.wrPrefixes.equals("")){
+			wrlen = 0;
+		}else{
+			wrlen = wrPrefixes.split("\\/")[0].split("\\.").length + 1;
+		}
 		wrLength[0] = getByteArrayForInteger(wrlen,2)[0];
 		wrLength[1] = getByteArrayForInteger(wrlen,2)[1];
-
-		//Withdrawal routes
-		if(wrlen != 0){
-			Byte[] wrs = getPrefixPacket(this.wrPrefixes);
-			wrPacket = conc(wrLength, wrs);
-		}else{
+		if(wrlen == 0){
 			wrPacket = conc(wrPacket, wrLength);
+		}else{
+			Byte[] wr = getPrefixPacket(wrPrefixes);
+			Byte[] nlriLength = new Byte[]{0,0};
+			packet = conc(conc(wrLength, wr), nlriLength);
+			return addHeader(2, getbyteFromByte(packet));
 		}
-		
+
 		//NLRI routes
 		Byte[] nlri = getPrefixPacket(this.paPrefixes);
 
@@ -136,9 +153,9 @@ public class BgpUpdatePacket extends BgpHeader{
 		String prefix[] = prefixes.split("/")[0].trim().split("\\.");
 		String length = prefixes.split("/")[1].trim();
 		Byte[] temp = new Byte[1+prefix.length];
-		temp[prefix.length] = getByteArrayForInteger(Integer.parseInt(length),1)[0];
+		temp[0] = getByteArrayForInteger(Integer.parseInt(length),1)[0];
 		for(int k=0; k<prefix.length; k++){
-			temp[k] = getByteArrayForInteger(Integer.parseInt(prefix[k]),1)[0];
+			temp[k+1] = getByteArrayForInteger(Integer.parseInt(prefix[k]),1)[0];
 		}
 		p = conc(p, temp);
 		return p;
@@ -165,8 +182,18 @@ public class BgpUpdatePacket extends BgpHeader{
 		return null;
 	}
 	public String stringFromPrefix(byte[] prefix){
-		if(prefix.length == 0)
+		if(prefix.length == 0){
 			return "";
+		}else{//This was a easier fix for the bug : prefeix length should be the first byte followed by the prefix. This has been fixed now.
+			//The following code is a fix while converting the byte to String.
+			ByteBuffer b = ByteBuffer.allocate(prefix.length);
+			byte t1 = prefix[0];
+			for(int i = 0; i<prefix.length-1; i++){
+				b.put(prefix[i+1]);
+			}
+			b.put(t1);
+			prefix = b.array();
+		}
 		int length = prefix.length;
 		String response = "";
 		for(int i=4; i>-1; i--){
@@ -174,7 +201,7 @@ public class BgpUpdatePacket extends BgpHeader{
 				response = "/"+getIntegerFromBytes(new byte[]{(byte)prefix[prefix.length-1]});
 				length = length - 1;
 			}else if(i>(length -1)){
-				response = ".0"+response;
+				//response = ".0"+response;
 			}else if(i!=0){
 				response = "."+getIntegerFromBytes(new byte[]{(byte)prefix[length-1]}) + response;
 				length = length - 1;
@@ -185,24 +212,30 @@ public class BgpUpdatePacket extends BgpHeader{
 		return response;
 	}
 
-	public Rule getRule(String rcvFrom){//TODO : might need too eliminate type alltogether.
+	public Rule getRule(String ruleSenderName, String bgpOperationName){
 		Rule rule = new Rule();
-		rule.setNetwork(getPaPrefixes());
-		//rule.setType(type);
-		for(Attribute attr : getPaAttributes()){
-			if(attr instanceof NextHopAttributeType){
-				rule.setNextHop((NextHopAttributeType)attr);
-			}else if(attr instanceof LocalPrefAttributeType){
-				rule.setLocalPref((LocalPrefAttributeType)attr);
-			}else if(attr instanceof OriginAttributeType){
-				rule.setOrigin((OriginAttributeType)attr);
-			}else if(attr instanceof AsPathAttributeType){
-				rule.setPath((AsPathAttributeType)attr);
-			}else if(attr instanceof MultiExitDiscAttributeType){
-				rule.setMetric((MultiExitDiscAttributeType)attr);
+		rule.setRuleSenderName(ruleSenderName);
+		rule.setBgpOperationName(bgpOperationName);
+		if(this.wrPrefixes!=null && !this.wrPrefixes.equals("")){
+			rule.setNetwork(getWrPrefixes());
+			rule.setType(RuleType.WITHDRAWRULE);
+		}else{
+			rule.setNetwork(getPaPrefixes());
+			rule.setType(RuleType.ADDRULE);
+			for(Attribute attr : getPaAttributes()){
+				if(attr instanceof NextHopAttributeType){
+					rule.setNextHop((NextHopAttributeType)attr);
+				}else if(attr instanceof LocalPrefAttributeType){
+					rule.setLocalPref((LocalPrefAttributeType)attr);
+				}else if(attr instanceof OriginAttributeType){
+					rule.setOrigin((OriginAttributeType)attr);
+				}else if(attr instanceof AsPathAttributeType){
+					rule.setPath((AsPathAttributeType)attr);
+				}else if(attr instanceof MultiExitDiscAttributeType){
+					rule.setMetric((MultiExitDiscAttributeType)attr);
+				}
 			}
 		}
-		rule.setPeerHandlerName(rcvFrom);
 		return rule;
 	}
 

@@ -108,7 +108,7 @@ public class BgpConsumer extends Thread {
 				link.setDestinationId(getOneDamnedConThread().nameOfRouterConnectedTo);
 				link.setAlive(true);
 			}if(FSMState.ESTABLISHED == this.fsmState && FSMState.IDLE == fsmState){
-				getBgpConfig().getRuleStore().removeRulesFrom(link.getDestinationAddress().toString());
+				getBgpConfig().getRuleStore().removeRulesFrom(getOneDamnedConThread().nameOfRouterConnectedTo+"=="+this.getName());
 			}
 		}
 		this.fsmState = fsmState;

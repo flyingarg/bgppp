@@ -141,7 +141,8 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 					break;
 			case 2: countUpdate++;
 					BgpUpdatePacket packet = new BgpUpdatePacket(packRest);
-					consumer.getBgpConfig().getRuleStore().addRule(packet.getRule(this.nameOfRouterConnectedTo));
+					String bgpOperationName = this.nameOfRouterConnectedTo + "==" + this.getName();
+					consumer.getBgpConfig().getRuleStore().addRule(packet.getRule(this.nameOfRouterConnectedTo, bgpOperationName));
 					break;
 			case 3: toSendNotification(inputStream, outputStream, log);
 					countNotification++;
@@ -201,6 +202,7 @@ public class BgpConsumerThread extends BgpOperations implements TimerListener{
 	public void timeUp(){
 		try {
 			listen.close();
+			consumer.setFsmState(FSMState.IDLE);
 			this.kaTimer.setRunning(false);
 			this.connectRetryTimer.setRunning(false);
 			this.holdTimer.setRunning(false);

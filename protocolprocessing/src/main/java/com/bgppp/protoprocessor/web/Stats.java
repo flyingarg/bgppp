@@ -1,5 +1,8 @@
 package com.bgppp.protoprocessor.web;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -9,12 +12,13 @@ import javax.ws.rs.core.MediaType;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
+import com.bgppp.protoprocessor.BgpConfig;
 import com.bgppp.protoprocessor.BgpConsumer;
 import com.bgppp.protoprocessor.FSMState;
 import com.bgppp.protoprocessor.ProducerConsumerStore;
 import com.bgppp.protoprocessor.Link;
-
 import com.bgppp.protoprocessor.graphs.*;
+import com.bgppp.protoprocessor.rules.Rule;
 
 import org.apache.log4j.*;
 
@@ -89,5 +93,94 @@ public class Stats{
 			e.printStackTrace();
 			return "--";
 		}
+	}
+	
+	@GET
+	@Path("/graphs/{routerName}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public String graphs(@PathParam("routerName") String routerName){
+		ArrayList<String> verticesId = new ArrayList<String>();
+		ArrayList<String> nodesId = new ArrayList<String>();
+		JSONArray nodeArray = new JSONArray();
+		JSONArray verticesArray = new JSONArray();
+		BgpConfig config = ProducerConsumerStore.getBgpConfigByName(routerName);
+		if(config == null)
+			return "ROUTER NOT FOUND";
+		HashMap<String, Rule> rules = config.getRuleStore().getLocalRib();
+		try{
+			nodesId.add(routerName);
+			nodeArray.put(getNode(routerName, 50, "red"));
+			for(String key : rules.keySet()){
+				Rule rule = rules.get(key);
+				if(rule.getPath().getPathSegmentAsString().split("==").length == 1){
+					verticesArray.put(getVertices(rule.getNetwork()+"=="+routerName, routerName, rule.getNetwork(), "yellow"));
+					verticesId.add(rule.getNetwork()+"=="+routerName);
+				}else{
+					String neighbours[] = rule.getPath().getPathSegmentAsString().split("==");
+					for(int i=0; i<neighbours.length-1; i++){
+						if(!edgeExists(neighbours[i], neighbours[i+1], verticesId)){
+							verticesArray.put(getVertices(neighbours[i]+"=="+neighbours[i+1], neighbours[i], neighbours[i+1], "black"));
+							verticesId.add(neighbours[i]+"=="+neighbours[i+1]);
+						}
+					}
+					if(!edgeExists(neighbours[neighbours.length-1], rule.getNetwork(), verticesId)){
+						verticesArray.put(getVertices(neighbours[neighbours.length-1] + "==" +rule.getNetwork(), neighbours[neighbours.length-1], rule.getNetwork(), "yellow"));
+						verticesId.add(neighbours[neighbours.length-1] + "==" +rule.getNetwork());
+					}
+				}
+			}
+			for(String str : verticesId){
+				String[] s = str.split("==");
+				for(int i=0;i<s.length;i++){
+					if(!nodeExists(s[i], nodesId)){
+						if(s[i].contains(".")){
+							nodesId.add(s[i]);
+							nodeArray.put((getNode(s[i], 25, "green")));
+						}else{
+							nodesId.add(s[i]);
+							nodeArray.put((getNode(s[i], 50, "red")));
+						}
+					}
+				}
+			}
+			JSONObject response = new JSONObject();
+			response.put("vertices", verticesArray);
+			response.put("nodes", nodeArray);
+			return  response.toString();
+		}catch(Exception e){
+			log.error("Exception in json stuff : " + e.getMessage());
+			e.printStackTrace();
+			return "--";
+		}
+	}
+
+	private boolean edgeExists(String n1, String n2, ArrayList<String> verticesId){
+		if(verticesId.contains(n1+"=="+n2) || (verticesId.contains(n2+"=="+n1) ))
+			return true;
+		else  
+			return false;
+	}
+	private boolean nodeExists(String n, ArrayList<String> nodesId){
+		if(nodesId.contains(n))
+			return true;
+		else  
+			return false;
+	}
+	private JSONObject getNode(String id, int size, String color) throws Exception{
+		JSONObject jsonobject = new JSONObject();
+		jsonobject.put("id", id);
+		jsonobject.put("name", id);
+		jsonobject.put("size", size);
+		jsonobject.put("color", color);
+		return jsonobject;
+	}
+	private JSONObject getVertices(String id, String source, String target, String color) throws Exception{
+		JSONObject jsonobject = new JSONObject();
+		jsonobject.put("id", id);
+		jsonobject.put("name", id);
+		jsonobject.put("target", target);
+		jsonobject.put("source", source);
+		jsonobject.put("color", color);
+		return jsonobject;
 	}
 }

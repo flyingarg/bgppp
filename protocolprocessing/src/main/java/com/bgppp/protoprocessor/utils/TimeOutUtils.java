@@ -7,4 +7,5 @@ public class TimeOutUtils {
 	public static int HOLDTIME = 12000;
 	public static int RECONNECT_TIME = 12000;
 	public static int SENDKEEPALIVE = 6000;
+	public static int DELAY_TIME = 6000;
 }
