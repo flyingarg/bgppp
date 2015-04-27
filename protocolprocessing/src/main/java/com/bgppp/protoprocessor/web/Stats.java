@@ -1,7 +1,7 @@
 package com.bgppp.protoprocessor.web;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -106,7 +106,7 @@ public class Stats{
 		BgpConfig config = ProducerConsumerStore.getBgpConfigByName(routerName);
 		if(config == null)
 			return "ROUTER NOT FOUND";
-		HashMap<String, Rule> rules = config.getRuleStore().getLocalRib();
+		Map<String, Rule> rules = config.getRuleStore().getLocalRib();
 		try{
 			nodesId.add(routerName);
 			nodeArray.put(getNode(routerName, 50, "red"));

@@ -1,0 +1,19 @@
+Simple Simulation
+	A simple simulation could be performed using the normal config-bgp fuile that comes with the application. This file generates a config of 3 routers namely 11111, 22222 and 33333. Each of these routers has a list of routers networks they have access to. Once the simulation starts, these routers would communicate using the BGP protocol and store the rules containing routing information to all the networks available on each router. 
+	These rules can be viewed using the `printrule [local/in]`. The `local` argument prints all rules stored in the router. These include both the rules that the router received from other routers and the rules that it already has knowledge of. The `in` argument prints only those rules that are received from other routers. As one can guess `local` and `in` correspond to the localRIB and inRIB specified in the RFC.
+
+Running a Standalone router and a Simulated router configuration.
+	When we say that the router runs in a standalone mode, we mean that the application can run as a single autonomous router. To demonstrate this we add a configuration called the `config-bgp-standalone`. This configuration defines a router `44444`. When the application starts with this configuration it creates only one router that would then try to connect to other interfaces specified in the `config-bgp-standalone`. Note that the standalone application only know of a interface it can connect to and not the router specifics. As a result the `44444` router can be configured to connect to any router.
+	The test scenario for standalone router would work as follows.
+	1. We would start the simulated configuration from earlier.
+	2. We notice from the simulated configuration that the router `11111` has a interface 10.50.1.1 that it is trying to listen incomming BGP connection on. So we would configure `44444` to try to connect to this interface.
+	3. We start the standalone configuration.
+	4. As the routers follow the BGP protocol to share information, we should be able to see the routes from all the networks available at the router `44444`. We must also be able to see the routes made available by `44444` on all the networks. As always, these routes can be viewed using the `printrule [local/in]` commands in ssh.
+
+Simulating BGP prefix hijacking.
+	When a BGP router receives a prefix that is larger than an existing prefix in it's table, it has to replace it. This is called prefix hijacking. To simulate this we using the configuration `config-bgp-hijack`. This is how the simulation would work.
+	1. We start the simulated configuration first, just as we did earlier.
+	2. We then start the simulated configuration using the `config-bg-hijacking`.
+	3. What `config-bgp-hijacking` does is, it publishes a network prefix `10.50/16`. Now the router `11111` has access to a network `10.50.1/24`, `22222` has access to network `10.50.2/24` and `33333` has access to network `10.50.3/24`. As all these prefixes are smaller than `10.50/16`, they will be dropped from all the networks and be replaced with `10.50/16`. 
+	4. The dropping would happen in a cascade fashion, As router `11111` is the first one to receive the prefix `10.50/16`, it will parse all the rules in its network, if a rule is with a smaller prefix is found, it sends a withdraw UPDATE packet to its peers and replaces the old prefix from it's own rule table. It then sends the new rule `10.50/16` to its peers `22222`. `22222` would intern do the same thing.
+	5. In the end we can see that the router `44444` is the only one who has access to all the network `10.50/16` and everyone with the desire to send a packet to this network has to send the packets through `44444`.

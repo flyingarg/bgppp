@@ -7,7 +7,7 @@ import com.bgppp.protoprocessor.rules.Rule;
 import com.bgppp.protoprocessor.utils.*;
 
 import java.net.*;
-import java.util.HashMap;
+import java.util.*;
 
 public class SSHCommands{
 	private static final Logger log = Logger.getLogger(SSHCommands.class);
@@ -125,7 +125,7 @@ public class SSHCommands{
 		if(split.length != 2)
 			return "USAGE :  %printrule [local|in|out]\n";
 		response+="NETWORK\tNEXT_HOP\tAS_PATH\tORIGIN\tLOCAL_PREF\tMUTI_EXIT_DISC\n";
-		HashMap<String, Rule> rules = null;
+		Map<String, Rule> rules = null;
 		if("local".equals(split[1])){
 			rules = config.getRuleStore().getLocalRib();
 		}else if("in".equals(split[1])){

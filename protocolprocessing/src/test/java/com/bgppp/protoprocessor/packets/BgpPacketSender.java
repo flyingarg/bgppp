@@ -106,7 +106,8 @@ public class BgpPacketSender extends Thread {
 				new OriginAttributeType(false, true, false, false,"1"), 
 				new LocalPrefAttributeType(false, true, false, false,Rule.MAX_LOCAL_PREF), 
 				new MultiExitDiscAttributeType(true, false, false, false,"0"), 
-				"0.0.0.0");
+				"0.0.0.0",
+				"");
 		return new BgpUpdatePacket(rule);
 	}
 	

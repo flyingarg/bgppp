@@ -211,6 +211,8 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 		switch(packType){
 			case 4: countKA++;
 					this.kaTimer.resetCounter();
+					log.info(kaSender.isRunning());
+					log.info(kaSender.getState());
 					if(!kaSender.isRunning())kaSender.start();
 					if(!isEstablished){
 						setFsmState(FSMState.ESTABLISHED);
@@ -270,7 +272,7 @@ public class BgpProducer extends BgpOperations implements TimerListener{
 				this.link.setDestinationId(nameOfRouterConnectedTo);
 				this.link.setAlive(true);
 			}if(FSMState.ESTABLISHED == this.fsmState && FSMState.IDLE == fsmState){//Enters ideal from established, ie connection is lost.
-				getBgpConfig().getRuleStore().removeRulesFrom(nameOfRouterConnectedTo+"=="+this.getName());
+				getBgpConfig().getRuleStore().removeRulesFrom(nameOfRouterConnectedTo+"=="+this.getName(), true);
 			}
 		}
 		this.fsmState = fsmState;
