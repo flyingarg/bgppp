@@ -2,14 +2,32 @@ package com.bgppp.protoprocessor;
 
 import junit.framework.TestCase;
 
-public class TestProcessBuilder extends TestCase {
+import org.apache.log4j.*;
 
-	@Override
-	protected void setUp() throws Exception {
-		/*ProcessBuilder processBuilder = new ProcessBuilder("ifconfig", "eth0:Router1r101","10.100.1.1" ,"netmask" ,"255.255.0.0");
-		processBuilder.redirectOutput(Redirect.INHERIT);
-		Process process = processBuilder.start();*/
-		super.setUp();
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+import java.io.IOException;
+
+public class TestProcessBuilder extends TestCase {
+	private static final Logger log = Logger.getLogger(TestProcessBuilder.class);
+
+	public int processBuilderCode() {
+		try{
+			ProcessBuilder processBuilder = new ProcessBuilder("/home/rajumoh/test.sh");
+			Process process = processBuilder.start();
+			BufferedReader output = new BufferedReader(new InputStreamReader(process.getInputStream()));
+			String line = "";
+			while( (line = output.readLine()) != null ){
+				if(line.toLowerCase().contains("error")){
+					return 1;
+				}
+			}
+			output.close();
+			return 0;
+		}catch(IOException e){
+			log.error(e.getMessage());
+			return 1;
+		}
 	}
 
 	@Override
@@ -17,8 +35,8 @@ public class TestProcessBuilder extends TestCase {
 		super.tearDown();
 	}
 
-	public void testNothing() {
-		assertTrue(true);
+	public void testProcessBuilder() {
+		assertEquals(1,processBuilderCode());
 	}
 
 }

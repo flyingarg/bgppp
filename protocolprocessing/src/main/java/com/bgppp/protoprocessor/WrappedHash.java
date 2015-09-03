@@ -1,7 +1,8 @@
 package com.bgppp.protoprocessor;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.IOException;
-import java.lang.ProcessBuilder.Redirect;
 import java.util.HashMap;
 
 import org.apache.log4j.*;
@@ -61,34 +62,67 @@ public class WrappedHash<K, V> extends HashMap<K, V>{
 		return super.remove(key);
 	}
 
-	@SuppressWarnings("unused")
 	public static synchronized void addIfconfig(BgpConfig bgpConfig, AddressAndMask address){
 		String exitStatus = "";
 		String ifName = bgpConfig.getRouterName() + address.getName();
 		log.info("ifconfig " + "eth0:" + ifName + " " + address.getAddress().toString().replaceFirst("/","") + " netmask "+ address.getMask());
+		ProcessBuilder processBuilder = new ProcessBuilder("ifconfig", "eth0:"+ifName, address.getAddress().toString().replaceFirst("/","") ,"netmask" ,address.getMask());
+		Process process;
+		BufferedReader br = null;
 		try{
-			ProcessBuilder processBuilder = new ProcessBuilder("ifconfig", "eth0:"+ifName, address.getAddress().toString().replaceFirst("/","") ,"netmask" ,address.getMask());
-			processBuilder.redirectOutput(Redirect.INHERIT);
-			processBuilder.redirectErrorStream(true);
-			Process process = processBuilder.start();
-			//exitStatus = ""+process.exitValue();
+			process = processBuilder.start();
+			br = new BufferedReader(new InputStreamReader(process.getInputStream()));
+			String output = "";
+			if((output=br.readLine())!=null){
+				if(output.toLowerCase().contains("usage"))
+					log.error("Could not create network interface");
+				return;
+			}
+			process.waitFor();
+			exitStatus = ""+process.exitValue();
+			br.close();
 		}catch(IOException exception){
+			if(br!=null)
+				try{
+					br.close();
+				}catch(IOException e){
+					log.error("Error creating interface " + ifName + "/" + address.toString().substring(1) + ", Exit status: " + exitStatus);
+				}
+			log.error("Error creating interface " + ifName + "/" + address.toString().substring(1) + ", Exit status: " + exitStatus);
+		}catch(InterruptedException e){
 			log.error("Error creating interface " + ifName + "/" + address.toString().substring(1) + ", Exit status: " + exitStatus);
 		}
 	}
 
-	@SuppressWarnings("unused")
 	public static synchronized void removeIfconfig(BgpConfig bgpConfig, AddressAndMask address){
 		String exitStatus = "";
 		String ifName = bgpConfig.getRouterName() + address.getName();
-		//Creating interfaces
 		log.info("ifconfig " + "eth0:" + ifName + " down");
+		ProcessBuilder processBuilder = new ProcessBuilder("ifconfig", "eth0:"+ifName, "down");
+		Process process;
+		BufferedReader br = null;
 		try{
-			ProcessBuilder processBuilder = new ProcessBuilder("ifconfig", "eth0:"+ifName, "down");
-			Process process = processBuilder.start();
-			//exitStatus = ""+process.exitValue();
+			process = processBuilder.start();
+			br = new BufferedReader(new InputStreamReader(process.getInputStream()));
+			String output = "";
+			if((output=br.readLine())!=null){
+				if(output.toLowerCase().contains("usage"))
+					log.error("Could not create network interface");
+				return;
+			}
+			process.waitFor();
+			exitStatus = ""+process.exitValue();
+			br.close();
 		}catch(IOException exception){
-			log.error("Error creating interface " + ifName+ " , Exit status: " + exitStatus);
+			if(br!=null)
+				try{
+					br.close();
+				}catch(IOException e){
+					log.error("Error deleting interface " + ifName + "/" + address.toString().substring(1) + ", Exit status: " + exitStatus);
+				}
+			log.error("Error deleting interface " + ifName + "/" + address.toString().substring(1) + ", Exit status: " + exitStatus);
+		}catch(InterruptedException exception){
+			log.error("Error deleting interface " + ifName+ " , Exit status: " + exitStatus);
 		}
 	}
 }
